@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('roles', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->string('name', 16);
-            $table->string('permissions');
+            $table->json('permissions');
             $table->boolean('status')->default(false);
             $table->timestamps();
         });
