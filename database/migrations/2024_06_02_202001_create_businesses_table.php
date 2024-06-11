@@ -17,10 +17,10 @@ return new class extends Migration
             $table->string('cnpj')->unique();
             $table->string('email')->unique();
             $table->string('phone')->unique();
-            $table->string('address');
-            $table->string('city');
-            $table->string('state');
-            $table->string('zip');
+            $table->string('address')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('zip')->nullable();
             $table->boolean('status')->default(false);
             $table->timestamps();
             $table->softDeletes();

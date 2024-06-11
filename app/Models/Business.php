@@ -10,6 +10,7 @@ class Business extends Model
     use HasFactory;
 
     protected $fillable = [
+        'id',
         'name',
         'cnpj',
         'email',

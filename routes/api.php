@@ -1,63 +1,92 @@
 <?php
   use Illuminate\Support\Facades\Route;
+  
+  use App\Http\Controllers\RoleController;
+  use App\Http\Controllers\BusinessController;
 
   Route::get('/', function () {});
-  Route::get('/login', function () {});
+  Route::post('/login', function (Request $request) {});
   Route::get('/register', function () {});
   Route::get('/forgot-password', function () {});
   Route::get('/reset-password/:hash', function () {});
 
-  Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {});
-    Route::get('/profile', function () {});
-    Route::get('/settings', function () {});
-    Route::get('/logout', function () {});
+  Route::get('/dashboard', function () {});
+  Route::get('/profile', function () {});
+  Route::get('/settings', function () {});
+  Route::get('/logout', function () {});
 
-    Route::get('/users', function () {});
-    Route::get('/users/:id', function () {});
-    Route::post('/users', function () {});
-    Route::put('/users/:id', function () {});
-    Route::delete('/users/:id', function () {});
+  Route::get('/users', function (Request $request) {
+    $request->validate([
+      'limit' => 'min:0|max:20',
+      'skip' => 'min:0',
+    ]);
 
-    Route::get('/roles', function () {});
-    Route::get('/roles/:id', function () {});
-    Route::post('/roles', function () {});
-    Route::put('/roles/:id', function () {});
-    Route::delete('/roles/:id', function () {});
+    $limit = 20;
+    $skip = 0;
 
-    Route::get('/logs', function () {});
-    Route::post('/logs', function () {});
+    if($request->has('limit')) {
+      $limit = $request->limit;
+    }
 
-    Route::get('/maintenances', function () {});
-    Route::get('/maintenances/:id', function () {});
-    Route::post('/maintenances', function () {});
-    Route::put('/maintenances/:id', function () {});
-    Route::delete('/maintenances/:id', function () {});
+    if($request->has('skip')) {
+      $skip = $request->skip;
+    }
 
-    Route::get('/buildings', function () {});
-    Route::get('/buildings/:id', function () {});
-    Route::post('/buildings', function () {});
-    Route::put('/buildings/:id', function () {});
-    Route::delete('/buildings/:id', function () {});
+    $users = User::all()->paginate($limit)->skip($skip);
 
-    Route::get('/businesses', function () {});
-    Route::get('/businesses/:id', function () {});
-    Route::post('/businesses', function () {});
-    Route::put('/businesses/:id', function () {});
-    Route::delete('/businesses/:id', function () {});
-
-    Route::get('/questions', function () {});
-    Route::get('/questions/:id', function () {});
-    Route::post('/questions', function () {});
-    Route::put('/questions/:id', function () {});
-    Route::delete('/questions/:id', function () {});
-
-    Route::get('/attachments', function () {});
-    Route::get('/attachments/:id', function () {});
-    Route::post('/attachments', function () {});
-    Route::put('/attachments/:id', function () {});
-    Route::delete('/attachments/:id', function () {});
-
-    Route::get('/form/:id', function () {});
+    return response()->json($users);
+});
+  Route::get('/users/:id', function (Request $request) {});
+  Route::post('/users', function (Request $request) {});
+  Route::put('/users/:id', function (Request $request) {});
+  Route::delete('/users/:id', function (Request $request, $id) {
+    try {
+      $user = User::find($request->id);
+      $user->delete();
+      return response()->json(['message' => 'User deleted successfully']);
+    } catch (Exception $e) {
+      return response()->json(['message' => 'User not found'], 200);
+    }
   });
+
+  Route::get('/roles', [RoleController::class, 'index']);
+  Route::get('/roles/{id}', [RoleController::class, 'show']);
+  Route::post('/roles', [RoleController::class, 'store']);
+  Route::put('/roles/{id}', [RoleController::class, 'update']);
+  Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
+
+  Route::get('/businesses', [BusinessController::class, 'index']);
+  Route::get('/businesses/:id', [BusinessController::class, 'show']);
+  Route::post('/businesses', [BusinessController::class, 'store']);
+  Route::put('/businesses/:id', [BusinessController::class, 'update']);
+  Route::delete('/businesses/:id', [BusinessController::class, 'destroy']);
+
+  Route::get('/logs', function (Request $request) {});
+  Route::post('/logs', function (Request $request) {});
+
+  Route::get('/maintenances', function (Request $request) {});
+  Route::get('/maintenances/:id', function (Request $request) {});
+  Route::post('/maintenances', function (Request $request) {});
+  Route::put('/maintenances/:id', function (Request $request) {});
+  Route::delete('/maintenances/:id', function (Request $request) {});
+
+  Route::get('/buildings', function (Request $request) {});
+  Route::get('/buildings/:id', function (Request $request) {});
+  Route::post('/buildings', function (Request $request) {});
+  Route::put('/buildings/:id', function (Request $request) {});
+  Route::delete('/buildings/:id', function (Request $request) {});
+
+  Route::get('/questions', function (Request $request) {});
+  Route::get('/questions/:id', function (Request $request) {});
+  Route::post('/questions', function (Request $request) {});
+  Route::put('/questions/:id', function (Request $request) {});
+  Route::delete('/questions/:id', function (Request $request) {});
+
+  Route::get('/attachments', function (Request $request) {});
+  Route::get('/attachments/:id', function (Request $request) {});
+  Route::post('/attachments', function (Request $request) {});
+  Route::put('/attachments/:id', function (Request $request) {});
+  Route::delete('/attachments/:id', function (Request $request) {});
+
+  Route::get('/form/:id', function (Request $request) {});
 ?>
