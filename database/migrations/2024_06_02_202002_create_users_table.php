@@ -15,7 +15,6 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('email', 100)->unique();
             $table->string('password', 64);
-            $table->string('salt', 64);
             $table->string('fullname', 100);
             $table->string('phone', 15)->unique();
             $table->boolean('status')->default(false);

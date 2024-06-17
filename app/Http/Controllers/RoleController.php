@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Role;
-
+use Exception;
 
 class RoleController extends Controller {
     public function index(Request $request) {
@@ -28,11 +28,11 @@ class RoleController extends Controller {
     public function store(Request $request) {
       try {
         $request->validate([
-            'name' => 'required|string',
+            'name' => 'required|string|max:16',
             'permissions' => 'required|string',
             'status' => 'required|boolean',
         ]);
-    
+
         $role = new Role();
         $ulid = Str::ulid();
         $role->id = $ulid;
@@ -40,7 +40,7 @@ class RoleController extends Controller {
         $role->permissions = $request->permissions;
         $role->status = $request->status;
         $role->save();
-    
+
         return response()->json($role)->status(201);
       } catch (Exception $e) {
         return response()->json(['message' => 'Role not created', 'error' => $e->getMessage()], 400);
@@ -50,11 +50,11 @@ class RoleController extends Controller {
     public function update(Request $request, $id) {
       try {
         $request->validate([
-          'name' => 'required|string',
+          'name' => 'required|string|max:16',
           'permissions' => 'required|string',
           'status' => 'required|boolean',
         ]);
-        
+
         $role = Role::findOrFail($id);
         $role->name = $request->name;
         $role->permissions = $request->permissions;
