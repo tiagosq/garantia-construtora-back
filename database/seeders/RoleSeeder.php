@@ -15,42 +15,64 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // ---------------------- Individual Permissions ----------------------
+        //create
+        //read
+        //update
+        //delete
         $attachmentPermissions = [
-            'upload',
-            'download',
+            'create',
+            'read',
+            'update',
+            'delete',
         ];
 
         $buildingPermissions = [
             'create',
             'read',
+            'update',
+            'delete',
         ];
 
         $businessPermissions = [
             'create',
             'read',
+            'update',
+            'delete',
         ];
 
         $logPermissions = [
+            'create',
             'read',
+            'update',
+            'delete',
         ];
 
         $maintenancePermissions = [
             'create',
             'read',
+            'update',
+            'delete',
         ];
 
         $questionPermissions = [
             'create',
             'read',
-            'reply',
+            'update',
+            'delete',
         ];
 
         $rolePermissions = [
             'create',
+            'read',
+            'update',
+            'delete',
         ];
 
         $userPermissions = [
             'create',
+            'read',
+            'update',
+            'delete',
         ];
 
         // ----------------------- Permissions by Role ------------------------
@@ -105,7 +127,7 @@ class RoleSeeder extends Seeder
             $superAdminRole['question'][$key]   = true;
             $adminRole['question'][$key]        = true;
             $managerRole['question'][$key]      = true;
-            $userRole['question'][$key]         = (in_array($key, ['create']) ? false : true);
+            $userRole['question'][$key]         = (in_array($key, ['create', 'delete']) ? false : true);
         });
 
 
@@ -133,7 +155,7 @@ class RoleSeeder extends Seeder
             [
                 'id' => Ulid::generate(),
                 'name' => 'SuperAdmin',
-                'permissions' => $superAdminRole,
+                'permissions' => json_encode($superAdminRole),
                 'status' => true,
                 'created_at' => Date::now(),
                 'updated_at' => Date::now(),
@@ -147,7 +169,7 @@ class RoleSeeder extends Seeder
             [
                 'id' => Ulid::generate(),
                 'name' => 'Admin',
-                'permissions' => $adminRole,
+                'permissions' => json_encode($adminRole),
                 'status' => true,
                 'created_at' => Date::now(),
                 'updated_at' => Date::now(),
@@ -162,7 +184,7 @@ class RoleSeeder extends Seeder
             [
                 'id' => Ulid::generate(),
                 'name' => 'Gerente',
-                'permissions' => $managerRole,
+                'permissions' => json_encode($managerRole),
                 'status' => true,
                 'created_at' => Date::now(),
                 'updated_at' => Date::now(),
@@ -176,7 +198,7 @@ class RoleSeeder extends Seeder
             [
                 'id' => Ulid::generate(),
                 'name' => 'Usuário',
-                'permissions' => $userRole,
+                'permissions' => json_encode($userRole),
                 'status' => true,
                 'created_at' => Date::now(),
                 'updated_at' => Date::now(),

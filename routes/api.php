@@ -12,11 +12,24 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'auth'
 ], function ($router) {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('logout');
-    Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api')->name('refresh');
-    Route::post('/me', [AuthController::class, 'me'])->middleware('auth:api')->name('me');
+    Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
+    Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('auth.logout');
+    Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api')->name('auth.refresh');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('auth.reset-password');
+    Route::post('/forget-password', [AuthController::class, 'forgetPassword'])->name('auth.forget-password');
+    Route::post('/me', [AuthController::class, 'me'])->middleware('auth:api')->name('auth.me'); // Only for tests, remove after...
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'roles'
+], function ($router) {
+    Route::get('/', [RoleController::class, 'index']);
+    Route::get('/{id}', [RoleController::class, 'show']);
+    Route::post('/', [RoleController::class, 'store']);
+    Route::put('/{id}', [RoleController::class, 'update']);
+    Route::delete('/{id}', [RoleController::class, 'destroy']);
 });
 
     /*
@@ -65,11 +78,6 @@ Route::group([
     }
   });
 
-  Route::get('/roles', [RoleController::class, 'index']);
-  Route::get('/roles/{id}', [RoleController::class, 'show']);
-  Route::post('/roles', [RoleController::class, 'store']);
-  Route::put('/roles/{id}', [RoleController::class, 'update']);
-  Route::delete('/roles/{id}', [RoleController::class, 'destroy']);
 
   Route::get('/businesses', [BusinessController::class, 'index']);
   Route::get('/businesses/:id', [BusinessController::class, 'show']);

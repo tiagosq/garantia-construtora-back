@@ -14,12 +14,11 @@ use function PHPUnit\Framework\isEmpty;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, Notifiable;
 
     protected $fillable = [
         'email',
         'password',
-        'salt',
         'fullname',
         'phone',
         'status',
