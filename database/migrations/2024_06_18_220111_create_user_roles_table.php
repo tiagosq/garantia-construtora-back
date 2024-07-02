@@ -11,18 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('business_users', function (Blueprint $table) {
-            $table->ulid('business');
+        Schema::create('user_roles', function (Blueprint $table) {
+            $table->ulid('id')->primary();
+            $table->ulid('business')->nullable();
             $table->ulid('user');
             $table->ulid('role');
-
-            $table->primary(['business','user']);
+            $table->timestamps();
 
             $table->foreign('business')->references('id')->on('businesses');
             $table->foreign('user')->references('id')->on('users');
             $table->foreign('role')->references('id')->on('roles');
-
-            $table->timestamps();
         });
     }
 
@@ -31,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('business_users');
+        Schema::dropIfExists('user_roles');
     }
 };

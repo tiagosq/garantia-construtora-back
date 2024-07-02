@@ -10,12 +10,14 @@ class Role extends Model
 {
     use HasFactory, HasUlids;
 
-    protected $fillable = ['id', 'name', 'permissions', 'status'];
+    protected $fillable = ['id', 'name', 'permissions', 'order', 'status', 'management'];
 
     protected $casts = [
         'permissions' => 'array',
+        'order' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'status' => 'boolean',
+        'management' => 'boolean',
     ];
 }

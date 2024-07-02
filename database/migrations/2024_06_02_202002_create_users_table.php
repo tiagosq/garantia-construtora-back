@@ -18,8 +18,6 @@ return new class extends Migration
             $table->string('fullname', 100);
             $table->string('phone', 15)->unique();
             $table->boolean('status')->default(false);
-            $table->ulid('role')->nullable();
-            $table->foreign('role')->references('id')->on('roles');
             $table->timestamp('email_verified_at')->nullable();
             $table->timestamps();
             $table->softDeletes();

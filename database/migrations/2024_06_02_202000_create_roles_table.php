@@ -15,7 +15,9 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->string('name', 16);
             $table->json('permissions');
+            $table->tinyInteger('order')->unique();
             $table->boolean('status')->default(false);
+            $table->boolean('management')->default(false);
             $table->timestamps();
         });
     }

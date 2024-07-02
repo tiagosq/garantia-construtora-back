@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class BusinessUser extends Model
+class UserRole extends Model
 {
     use HasFactory, HasUlids;
 

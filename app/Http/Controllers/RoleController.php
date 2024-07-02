@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Role;
+use App\Models\UserRole;
 use Exception;
+use Illuminate\Support\Facades\Validator;
 
 class RoleController extends Controller {
     public function index(Request $request) {
@@ -25,13 +28,57 @@ class RoleController extends Controller {
       return response()->json(['message' => 'Role not found'], 404);
     }
 
+    public function showAvailablesToUse()
+    {
+        $validator = Validator::make(request()->route()->parameters(), [
+            'business' => 'nullable|string'
+        ]);
+
+        $validator->sometimes('business', 'required|exists:businesses,id', function ($input) {
+            return !empty($input->business);
+        });
+
+        if($validator->fails()){
+            return response()->json($validator->errors(), 400);
+        }
+
+        $roleWhereParams = [];
+        $userRoleWhereParams = [
+            ['user', '=', auth()->user()->id]
+        ];
+
+        // If business don't filled, consider like a management user, otherwise is a normal user
+        if (request()->route()->business)
+        {
+            $userRoleWhereParams[] = ['business', '=', request()->route()->business];
+            $userRole = UserRole::where($userRoleWhereParams)->first();
+            $role = Role::find($userRole->role);
+            $roleWhereParams[] = ['order', '>=', $role->order];
+            $roleWhereParams[] = ['management', '=', false];
+        }
+        else
+        {
+            $userRole = UserRole::where($userRoleWhereParams)->first();
+            $role = Role::find($userRole->role);
+            $roleWhereParams[] = ['order', '>=', $role->order];
+            $roleWhereParams[] = ['management', '=', true];
+        }
+
+        $roles = Role::where($roleWhereParams)->orderBy('order', 'asc')->get();//->orderBy('management', 'asc')->get();
+
+        return response()->json(['data' => $roles], 200);
+    }
+
     public function store(Request $request) {
       try {
         $request->validate([
             'name' => 'required|string|max:16',
             'permissions' => 'required|string',
+            'order' => 'required|numeric',
             'status' => 'required|boolean',
         ]);
+
+        $lastRole = Role::orderBy('order', 'desc')->first();
 
         $role = new Role();
         $ulid = Str::ulid();
@@ -39,6 +86,17 @@ class RoleController extends Controller {
         $role->name = $request->name;
         $role->permissions = $request->permissions;
         $role->status = $request->status;
+
+        if ($lastRole->order <= $request->order)
+        {
+            Role::where('order', '>=', $request->order)->increment('order', 1);
+            $role->order = $request->order;
+        }
+        else // $lastRole->order > $request->order
+        {
+            $role->order = ($lastRole->order++);
+        }
+
         $role->save();
 
         return response()->json($role)->status(201);

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Http\Client\Request;
 
@@ -13,8 +14,8 @@ Route::group([
     'prefix' => 'auth'
 ], function ($router) {
     Route::post('/register', [AuthController::class, 'register'])->name('auth.register');
-    Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('auth.logout');
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:api')->name('logout');
     Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api')->name('auth.refresh');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('auth.reset-password');
     Route::post('/forget-password', [AuthController::class, 'forgetPassword'])->name('auth.forget-password');
@@ -25,11 +26,39 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'roles'
 ], function ($router) {
-    Route::get('/', [RoleController::class, 'index']);
-    Route::get('/{id}', [RoleController::class, 'show']);
-    Route::post('/', [RoleController::class, 'store']);
-    Route::put('/{id}', [RoleController::class, 'update']);
-    Route::delete('/{id}', [RoleController::class, 'destroy']);
+    Route::get('/all', [RoleController::class, 'index'])->middleware('auth:api');
+    Route::get('/availables/{business?}', [RoleController::class, 'showAvailablesToUse'])->middleware('auth:api');
+    Route::get('/{id}', [RoleController::class, 'show'])->middleware('auth:api');
+    Route::post('/', [RoleController::class, 'store'])->middleware('auth:api');
+    Route::put('/{id}', [RoleController::class, 'update'])->middleware('auth:api');
+    Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware('auth:api');
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'users'
+], function ($router) {
+    Route::get('/', [UserController::class, 'index'])->middleware('auth:api')->name('users.index');
+    Route::get('/{id}', [UserController::class, 'show'])->middleware('auth:api')->name('users.show');
+    Route::post('/', [UserController::class, 'store'])->middleware('auth:api')->name('users.create');
+    Route::put('/{id}', [UserController::class, 'update'])->middleware('auth:api')->name('users.update');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('auth:api')->name('users.delete');
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'businesses'
+], function ($router) {
+    Route::post('/{id}/{user}', [BusinessController::class, 'associateUser'])->middleware('auth:api')->name('businesses.associate.user');
+    Route::delete('/{id}/{user}', [BusinessController::class, 'disassociateUser'])->middleware('auth:api')->name('businesses.disassociate.user');
+    Route::post('/', [UserController::class, 'store'])->middleware('auth:api')->name('users.create');
+    Route::put('/{id}', [UserController::class, 'update'])->middleware('auth:api')->name('users.update');
+
+    /*
+    Route::get('/', [UserController::class, 'index'])->middleware('auth:api')->name('users.index');
+    Route::get('/{id}', [UserController::class, 'show'])->middleware('auth:api')->name('users.show');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('auth:api')->name('users.delete');
+    */
 });
 
     /*

@@ -18,7 +18,8 @@ class DemoSeeder extends Seeder
     {
         $businessId = Ulid::generate();
         $userId = Ulid::generate();
-        $roleSuperAdmin = DB::table('roles')->select(['id'])->where('name','SuperAdmin')->first()->id;
+        $managementId = Ulid::generate();
+        $managementRole = DB::table('roles')->select(['id'])->where('name','SuperAdmin')->first()->id;
         $roleAdmin = DB::table('roles')->select(['id'])->where('name','Admin')->first()->id;
 
         // SuperAdmin
@@ -27,13 +28,12 @@ class DemoSeeder extends Seeder
                 'email' => 'superadmin@garantiaconstrutora.com.br',
             ],
             [
-                'id' => Ulid::generate(),
+                'id' => $managementId,
                 'email' => 'superadmin@garantiaconstrutora.com.br',
                 'password' => Hash::make('12345678'),
                 'fullname' => 'SuperAdministrador',
                 'phone' => '+5551912345678',
                 'status' => true,
-                'role' => $roleSuperAdmin,
                 'created_at' => Date::now(),
                 'updated_at' => Date::now(),
             ]
@@ -76,16 +76,29 @@ class DemoSeeder extends Seeder
             ]
         );
 
-
-        DB::table('business_users')->updateOrInsert(
+        DB::table('user_roles')->updateOrInsert(
             [
                 'business' => $businessId,
                 'user' => $userId,
             ],
             [
+                'id' => Ulid::generate(),
                 'business' => $businessId,
                 'user' => $userId,
                 'role' => $roleAdmin,
+            ]
+        );
+
+        DB::table('user_roles')->updateOrInsert(
+            [
+                'business' => null,
+                'user' => $managementId,
+            ],
+            [
+                'id' => Ulid::generate(),
+                'business' => null,
+                'user' => $managementId,
+                'role' => $managementRole,
             ]
         );
     }
