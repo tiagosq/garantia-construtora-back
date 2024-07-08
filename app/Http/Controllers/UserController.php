@@ -31,6 +31,8 @@ class UserController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
+            $this->setBefore(json_encode(request()->all()));
+
             // Declare your fixed params here
             $defaultKeys = [
                 'limit',
@@ -67,7 +69,6 @@ class UserController extends Controller
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
             $business = (request()->has('business') ? request()->business : null);
-            $this->setBefore(json_encode(request()->all()));
 
             $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
                 return !in_array($key, $defaultKeys);
@@ -142,6 +143,8 @@ class UserController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
+            $this->setBefore(json_encode(request()->all()));
+
             $validator = Validator::make(request()->route()->parameters(), [
                 'id' => 'required|string|exists:users,id',
                 'business' => 'sometimes|string|exists:businesses,id',
@@ -152,7 +155,6 @@ class UserController extends Controller
                 throw new ValidationException($validator);
             }
             $business = (request()->has('business') ? request()->business : null);
-            $this->setBefore(json_encode(request()->all()));
 
             $query = User::query();
 
@@ -208,7 +210,75 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function showOwn()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
+        {
+            if (!empty(auth()->user()))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $this->setBefore(json_encode(['id' => auth()->user()->id]));
+
+            $query = User::query();
+
+            $query->select([
+                'users.email as email',
+                'users.fullname as fullname',
+                'users.phone as phone',
+                'users.status as status',
+                'users.email_verified_at as email_verified_at',
+                'users.created_at as created_at',
+                'users.updated_at as updated_at',
+            ]);
+
+            if (!empty($business))
+            {
+                $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
+                $query->where('user_roles.business', '=', $business);
+            }
+
+            $query->where('users.id', '=', request()->id);
+            $user = $query->first();
+
+            if (!empty($user))
+            {
+                $this->setAfter(json_encode(['message' => 'Showing user ' . $user->email]));
+                $returnMessage =  response()->json(['message' => 'Showing user ' . $user->email, 'data' => $user]);
+            }
+            else
+            {
+                $this->setAfter(json_encode(['message' => 'User ' . request()->route()->id . ' not present in this business.']));
+                $returnMessage =  response()->json(['message' => 'User ' . request()->route()->id . ' not present in this business.']);
+            }
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
+    }
+
+    public function store()
     {
         $returnMessage = null;
         $this->initLog(request());
@@ -219,6 +289,8 @@ class UserController extends Controller
             {
                 throw new UnauthorizedException('Unauthorized');
             }
+
+            $this->setBefore(json_encode(request()->all()));
 
             $validator = Validator::make(request()->all(), [
                 'fullname' => 'required|string',
@@ -247,7 +319,6 @@ class UserController extends Controller
             $user->password = Hash::make(request()->password);
             $user->save();
 
-            // Create the permission of user in a business if they is filled
             $userRole = new UserRole();
             $userRole->business = (!empty(request()->business) ? request()->business : null);
             $userRole->user = $user->id;
@@ -299,6 +370,8 @@ class UserController extends Controller
             {
                 throw new UnauthorizedException('Unauthorized');
             }
+
+            $this->setBefore(json_encode(request()->all()));
 
             $validator = Validator::make(request()->all(), [
                 'id' => 'required|string|exists:users,id',
@@ -397,6 +470,8 @@ class UserController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
+            $this->setBefore(json_encode(array_merge(['id' => auth()->user()->id], request()->all())));
+
             $validator = Validator::make(request()->all(), [
                 'fullname' => 'sometimes|string',
                 'email' => 'sometimes|email|unique:users',
@@ -475,6 +550,8 @@ class UserController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
+            $this->setBefore(json_encode(request()->all()));
+
             $validator = Validator::make(request()->all(), [
                 'id' => 'required|string|exists:users,id',
             ]);
@@ -539,6 +616,8 @@ class UserController extends Controller
             {
                 throw new UnauthorizedException('Unauthorized');
             }
+
+            $this->setBefore(json_encode(['id' => auth()->user()->id]));
 
             $user = User::find(auth()->user()->id);
             $user->delete();
