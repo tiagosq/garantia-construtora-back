@@ -17,12 +17,10 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->date('start_date');
             $table->date('end_date');
-            $table->string('isCompleted')->default(false);
-            $table->string('isApproved')->default(false);
+            $table->string('is_completed')->default(false);
+            $table->string('is_approved')->default(false);
             $table->ulid('building');
             $table->foreign('building')->references('id')->on('buildings');
-            $table->ulid('maintenance');
-            $table->foreign('maintenance')->references('id')->on('maintenances');
             $table->ulid('user');
             $table->foreign('user')->references('id')->on('users');
             $table->timestamps();

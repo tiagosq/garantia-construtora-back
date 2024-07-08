@@ -7,13 +7,125 @@ use Illuminate\Support\Str;
 use App\Models\Business;
 use App\Models\Role;
 use App\Models\UserRole;
+use App\Trait\Log;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\UnauthorizedException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\Uid\Ulid;
 
 class BusinessController extends Controller
 {
+    use Log;
+
+    public function index()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
+        {
+            if (!$this->checkUserPermission('business', 'read'))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            // Declare your fixed params here
+            $defaultKeys = [
+                'limit',
+                'page',
+            ];
+
+            $validator = Validator::make(request()->all(), [
+                'limit' => 'sometimes|numeric|min:20|max:100',
+                'page' => 'sometimes|numeric|min:1',
+                // 'dbColumnName' => 'asc|desc'
+                '*' => function ($attribute, $value, $fail) use ($defaultKeys) {
+                    if (!in_array($attribute, $defaultKeys))
+                    {
+                        if (!in_array($value, ['asc', 'desc']))
+                        {
+                            $fail('[validation.order]');
+                        }
+
+                        if (!Schema::hasColumn('logs', $attribute))
+                        {
+                            $fail('[validation.column]');
+                        }
+                    }
+                },
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $limit = (request()->has('limit') ? request()->limit : 20);
+            $page = (request()->has('page') ? (request()->page - 1) : 0);
+            $this->setBefore(json_encode(request()->all()));
+
+            $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
+                return !in_array($key, $defaultKeys);
+            }, ARRAY_FILTER_USE_KEY);
+
+            $query = Business::query();
+
+            $query->select([
+                'businesses.name as name',
+                'businesses.cnpj as cnpj',
+                'businesses.email as email',
+                'businesses.phone as phone',
+                'businesses.address as address',
+                'businesses.city as city',
+                'businesses.state as state',
+                'businesses.zip as zip',
+                'businesses.status as status',
+                'businesses.created_at as created_at',
+                'businesses.updated_at as updated_at',
+            ]);
+
+            if (!empty($sort))
+            {
+                foreach ($sort as $column => $direction)
+                {
+                    $query->orderBy($column, $direction);
+                }
+            }
+            else
+            {
+                $query->orderBy('name', 'asc');
+            }
+
+            $businesses = $query->paginate($limit, ['*'], 'page', $page);
+
+            $this->setAfter(json_encode(['message' => 'Showing businesses available']));
+            $returnMessage =  response()->json(['message' => 'Showing businesses available', 'data' => $businesses]);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
+    }
+
     public function associateUser()
     {
         if (!$this->checkUserPermission('user', 'create', request()->route()->id))
@@ -143,7 +255,7 @@ class BusinessController extends Controller
         }
     }
 
-        public function update()
+    public function update()
     {
         if (!$this->checkUserPermission('business', 'update', request()->route()->business))
         {

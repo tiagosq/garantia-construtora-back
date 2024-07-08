@@ -25,7 +25,7 @@ return new class extends Migration
             $table->boolean('status')->default(false);
             $table->ulid('business');
             $table->foreign('business')->references('id')->on('businesses');
-            $table->ulid('owner');
+            $table->ulid('owner')->nullable();
             $table->foreign('owner')->references('id')->on('users');
             $table->timestamps();
             $table->softDeletes();

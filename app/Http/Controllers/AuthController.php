@@ -9,6 +9,7 @@ use App\Models\PasswordResetToken as PasswordResetTokenModel;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserRole;
+use App\Trait\Log;
 use Exception;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -16,41 +17,51 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\UnauthorizedException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\Uid\Ulid;
 
 class AuthController extends Controller
 {
+    use Log;
+
     public function register() {
-        if (!$this->checkUserPermission('user', 'create', request()->business))
-        {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $this->initLog(request());
+        $returnMessage = null;
 
-        $validator = Validator::make(request()->all(), [
-            'fullname' => 'required',
-            'email' => 'required|email|unique:users',
-            'phone' => 'required|unique:users',
-            'password' => 'required|confirmed|min:8',
-            'role' => 'sometimes|exists:roles,id',
-            'business' => 'sometimes|exists:businesses,id'
-        ]);
-
-        $validator->sometimes(['role', 'business'], 'required', function ($input) {
-            return !empty($input->role) || !empty($input->business);
-        });
-
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
-        }
-
-        if (!$this->roleCanBeAssociatedToUser(request()->role, (empty(request()->business) ? null : request()->business)))
-        {
-            return response()->json(['message' => 'User don\'t have permission to associate this role to another user.' ], 400);
-        }
-
-        DB::beginTransaction();
         try
         {
+            if (!$this->checkUserPermission('user', 'create', request()->business))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(request()->all(), [
+                'fullname' => 'required',
+                'email' => 'required|email|unique:users',
+                'phone' => 'required|unique:users',
+                'password' => 'required|confirmed|min:8',
+                'role' => 'sometimes|exists:roles,id',
+                'business' => 'sometimes|exists:businesses,id'
+            ]);
+
+            $validator->sometimes(['role', 'business'], 'required', function ($input)
+            {
+                return !empty($input->role) || !empty($input->business);
+            });
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            if (!$this->roleCanBeAssociatedToUser(request()->role, (empty(request()->business) ? null : request()->business)))
+            {
+                throw new UnauthorizedException('User don\'t have permission to associate this role to another user');
+            }
+
+            DB::beginTransaction();
+
             $user = new User;
             $user->id = Ulid::generate();
             $user->fullname = request()->fullname;
@@ -65,40 +76,110 @@ class AuthController extends Controller
             $userRole->user = $user->id;
             $userRole->role = $role->id;
             $userRole->save();
+
+            DB::commit();
+            $this->setAfter(json_encode(['message' => 'Successfully user registration']));
+            $returnMessage = response()->json([
+                'message' => 'Successfully user registration!',
+                'data' => $user,
+            ], 201);
+
+        }
+        catch (UnauthorizedException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
         }
         catch (Exception $ex)
         {
             DB::rollBack();
-            return response()->json([
-                'message' => 'User registration failed!',
-                'data' => $ex,
-            ], 500);
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
         }
-
-        DB::commit();
-        return response()->json([
-            'message' => 'Successfully user registration!',
-            'data' => $user,
-        ], 201);
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
     public function login()
     {
-        $credentials = request(['email', 'password']);
-        if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+        $this->initLog(request());
+        $returnMessage = null;
+
+        try
+        {
+            $credentials = request(['email', 'password']);
+            $this->setBefore(json_encode($credentials));
+
+            if (!$token = auth()->attempt($credentials)) {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            PasswordResetTokenModel::where('email', request()->email)->delete();
+
+            $this->setUser(auth()->user()->id);
+            $this->setAfter('Successfully logged in');
+            $returnMessage = $this->respondWithToken($token);
         }
-
-        PasswordResetTokenModel::where('email', request()->email)->delete();
-
-        return $this->respondWithToken($token);
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
     public function logout()
     {
-        auth()->logout();
+        $this->initLog(request());
+        $returnMessage = null;
 
-        return response()->json(['message' => 'Successfully logged out'], 200);
+        try
+        {
+            $this->setBefore(json_encode(['token' => request()->bearerToken()]));
+
+            if (empty(request()->bearerToken()))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            auth()->logout();
+            $this->setAfter("Successfully logged out");
+            $returnMessage = response()->json(['message' => 'Successfully logged out'], 200);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
     public function refresh()
@@ -108,65 +189,106 @@ class AuthController extends Controller
 
     public function forgetPassword()
     {
-        $validator = Validator::make(request()->all(), [
-            'email' => 'required|email',
-        ]);
+        $this->initLog(request());
+        $returnMessage = null;
 
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
+        try
+        {
+            $validator = Validator::make(request()->all(), [
+                'email' => 'required|email|exists:users,email',
+            ]);
+
+            if($validator->fails()){
+                throw new ValidationException($validator);
+            }
+
+            $user = User::whereEmail(request()->email)->first();
+
+            // generate token
+            $token = Password::getRepository()->create($user);
+
+            PasswordResetTokenModel::updateOrCreate([
+                'email' => $user->email
+            ],
+            [
+                'email' => $user->email,
+                'created_at' => Date::now(),
+                'token' => $token,
+            ]);
+
+            Mail::to($user)->send(new ResetPasswordTokenMail($user, $token));
+
+            $returnMessage = response()->json(['message' => 'Reset link sended!'], 200);
         }
-
-        $user = User::whereEmail(request()->email)->first();
-
-        // generate token
-        $token = Password::getRepository()->create($user);
-
-        $data = [
-            'token' => $token,
-        ];
-
-        PasswordResetTokenModel::updateOrCreate([
-            'email' => $user->email
-        ],
-        [
-            'email' => $user->email,
-            'created_at' => Date::now(),
-            'token' => $token,
-        ]);
-
-        Mail::to($user)->send(new ResetPasswordTokenMail($user, $token));
-
-        return response()->json(['message' => 'Reset link sended!'], 200);
-
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
     public function resetPassword()
     {
-        $validator = Validator::make(request()->all(), [
-            'token' => 'required|string',
-            'password' => 'required|confirmed|min:8',
-        ]);
+        $this->initLog(request());
+        $returnMessage = null;
 
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
-        }
-
-        $passwordResetToken = PasswordResetTokenModel::where('token', request()->token)->whereDate('created_at', '>=', Date::now()->subHour()->toDateTimeString())->first();
-
-        if (!empty($passwordResetToken))
+        try
         {
-            $user = User::whereEmail($passwordResetToken->email)->first();
+            $validator = Validator::make(request()->all(), [
+                'token' => 'required|string|exists:password_reset_tokens,token',
+                'password' => 'required|confirmed|min:8',
+            ]);
 
-            if ($user->update(['password' => request()->password]))
+            if($validator->fails())
             {
-                PasswordResetTokenModel::where('email', $user->email)->delete();
-
-                Mail::to($user)->send(new PasswordReseted($user));
-                return response()->json(['message' => 'Password reseted!'], 200);
+                throw new ValidationException($validator);
             }
-            return response()->json(['message' => 'Error on reset password!'], 400);
+
+            $passwordResetToken = PasswordResetTokenModel::where('token', request()->token)->whereDate('created_at', '>=', Date::now()->subHour()->toDateTimeString())->first();
+
+
+            if (!empty($passwordResetToken))
+            {
+                $user = User::whereEmail($passwordResetToken->email)->first();
+
+                if ($user->update(['password' => request()->password]))
+                {
+                    PasswordResetTokenModel::where('email', $user->email)->delete();
+                    Mail::to($user)->send(new PasswordReseted($user));
+                    $returnMessage = response()->json(['message' => 'Password reseted!'], 200);
+                }
+                throw new Exception('Error on reset password!');
+            }
+
+            $validator->errors()->add('token', 'validation.timeout');
+            throw new ValidationException($validator);
         }
-        return response()->json(['message' => 'Invalid token or timeouted!'], 400);
+        catch (ValidationException $ex)
+        {
+
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
     protected function respondWithToken($token)

@@ -14,21 +14,15 @@ return new class extends Migration
         Schema::create('logs', function (Blueprint $table) {
             $table->ulid('id')->primary();
             $table->ulid('user')->nullable();
-            $table->ulid('role')->nullable();
-            $table->ulid('maintenance')->nullable();
-            $table->ulid('building')->nullable();
-            $table->ulid('business')->nullable();
             $table->foreign('user')->references('id')->on('users');
-            $table->foreign('role')->references('id')->on('roles');
-            $table->foreign('maintenance')->references('id')->on('maintenances');
-            $table->foreign('building')->references('id')->on('buildings');
-            $table->foreign('business')->references('id')->on('businesses');
             $table->string('ip');
             $table->string('user_agent');
             $table->string('action');
-            $table->string('description');
-            $table->string('before');
-            $table->string('after');
+            $table->string('method');
+            $table->string('body')->nullable();
+            $table->string('description')->nullable();
+            $table->text('before')->nullable();
+            $table->text('after')->nullable();
             $table->timestamps();
         });
     }
