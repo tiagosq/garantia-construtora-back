@@ -18,8 +18,6 @@ return new class extends Migration
             $table->string('type');
             $table->ulid('question');
             $table->foreign('question')->references('id')->on('questions');
-            $table->ulid('maintenance');
-            $table->foreign('maintenance')->references('id')->on('maintenances');
             $table->ulid('user');
             $table->foreign('user')->references('id')->on('users');
             $table->boolean('status')->default(false);

@@ -9,6 +9,7 @@ use App\Models\Role;
 use App\Models\UserRole;
 use App\Trait\Log;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\UnauthorizedException;
@@ -23,6 +24,8 @@ class RoleController extends Controller {
 
         try
         {
+            $this->setBefore(json_encode(request()->all()));
+
             if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
@@ -64,7 +67,6 @@ class RoleController extends Controller {
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
             $business = (request()->has('business') ? request()->business : null);
-            $this->setBefore(json_encode(request()->all()));
 
             $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
                 return !in_array($key, $defaultKeys);
@@ -107,31 +109,76 @@ class RoleController extends Controller {
         }
     }
 
-    public function show($id) {
-      $role = Role::find($id);
-      if($role) {
-        return response()->json($role);
-      }
-      return response()->json(['message' => 'Role not found'], 404);
+    public function show()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
+        {
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->business : null)))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(request()->all(), [
+                'id' => 'required|string|exists:roles,id',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $query = Role::query();
+            $business = (request()->has('business') ? request()->business : null);
+
+            $query->where('roles.id', '=', request()->id);
+            $query->where('roles.management', '=', !$business);
+
+            $role = $query->get();
+
+            $this->setAfter(json_encode(['message' => 'Showing role ' . $role->name, 'data' => $role]));
+            $returnMessage =  response()->json(['message' => 'Showing role ' . $role->name, 'data' => $role]);
+        }
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
-    public function showAvailablesToUse()
+    public function showAvailable()
     {
         $this->initLog(request());
         $returnMessage = null;
 
         try
         {
-            if (!empty(auth()->user()))
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->route()->business : null)))
             {
-                throw new UnauthorizedException("Unauthorized");
+                throw new UnauthorizedException('Unauthorized');
             }
 
             $validator = Validator::make(request()->route()->parameters(), [
-                'business' => 'nullable|string'
+                'business' => 'sometimes|string|exists:businesses,id'
             ]);
 
-            $validator->sometimes('business', 'required|exists:businesses,id', function ($input) {
+            $validator->sometimes('business', 'required', function ($input) {
                 return !empty($input->business);
             });
 
@@ -146,7 +193,7 @@ class RoleController extends Controller {
             ];
 
             // If business don't filled, consider like a management user, otherwise is a normal user
-            if (request()->route()->business)
+            if (!empty(request()->route()->business))
             {
                 $userRoleWhereParams[] = ['business', '=', request()->route()->business];
                 $userRole = UserRole::where($userRoleWhereParams)->first();
@@ -162,8 +209,8 @@ class RoleController extends Controller {
                 $roleWhereParams[] = ['management', '=', true];
             }
 
-            $roles = Role::where($roleWhereParams)->orderBy('order', 'asc')->get();//->orderBy('management', 'asc')->get();
-            $this->setAfter(json_encode($roles));
+            $roles = Role::where($roleWhereParams)->orderBy('order', 'asc')->get();
+            $this->setAfter(json_encode(['message' => 'Getted available roles to user','data' => $roles]));
             $returnMessage = response()->json(['message' => 'Getted available roles to user','data' => $roles], 200);
         }
         catch (UnauthorizedException $ex)
@@ -195,6 +242,9 @@ class RoleController extends Controller {
 
         try
         {
+            $this->setBefore(json_encode(request()->all()));
+            DB::beginTransaction();
+
             if (!$this->checkUserPermission('role', 'create'))
             {
                 throw new UnauthorizedException('Unauthorized');
@@ -213,8 +263,6 @@ class RoleController extends Controller {
                 throw new ValidationException($validator);
             }
 
-
-
             $lastRole = Role::orderBy('order', 'desc')->first();
 
             $role = new Role();
@@ -225,7 +273,7 @@ class RoleController extends Controller {
             $role->status = (request()->has('status') ? request()->status : false);
             $role->management = (request()->has('management') ? request()->management : false);
 
-            if ($lastRole->order <= $request->order)
+            if ($lastRole->order <= request()->order)
             {
                 Role::where('order', '>=', request()->order)->increment('order', 1);
                 $role->order = request()->order;
@@ -237,7 +285,12 @@ class RoleController extends Controller {
 
             $role->save();
 
-            $this->setAfter(json_encode($role));
+            DB::commit();
+
+            $this->setAfter(json_encode([
+                'message' => 'Role successfully created',
+                'data' => $role
+            ]));
             $returnMessage = response()->json([
                 'message' => 'Role successfully created',
                 'data' => $role
@@ -245,16 +298,19 @@ class RoleController extends Controller {
         }
         catch (UnauthorizedException $ex)
         {
+            DB::rollBack();
             $this->setAfter($ex->getMessage());
             $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
         }
         catch (ValidationException $ex)
         {
+            DB::rollBack();
             $this->setAfter(json_encode($ex->errors()));
             $returnMessage = response()->json(['message' => $ex->getMessage()], 400);
         }
         catch (Exception $ex)
         {
+            DB::rollBack();
             $this->setAfter($ex->getMessage());
             $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
         }
@@ -265,32 +321,178 @@ class RoleController extends Controller {
         }
     }
 
-    public function update(Request $request, $id) {
-      try {
-        $request->validate([
-          'name' => 'required|string|max:16',
-          'permissions' => 'required|string',
-          'status' => 'required|boolean',
-        ]);
+    public function update()
+    {
+        $this->initLog(request());
+        $returnMessage = null;
 
-        $role = Role::findOrFail($id);
-        $role->name = $request->name;
-        $role->permissions = $request->permissions;
-        $role->status = $request->status;
-        $role->save();
-        return response()->json($role, 200);
-      } catch (Exception $e) {
-        return response()->json(['message' => 'An error has occurred'], 400);
-      }
+        try
+        {
+            DB::beginTransaction();
+
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('role', 'update'))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(request()->all(), [
+                'id' => 'required|string|exists:roles,id',
+                'name' => 'required|string|max:16',
+                'permissions' => 'required|json',
+                'order' => 'required|numeric',
+                'status' => 'nullable|boolean',
+                'management' => 'nullable|boolean',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $role = Role::find(request()->id);
+
+            if (request()->has('name'))
+            {
+                $role->name = request()->name;
+            }
+            if (request()->has('permissions'))
+            {
+                $role->permissions = request()->permissions;
+            }
+            if (request()->has('status'))
+            {
+                $role->status = request()->status;
+            }
+            if (request()->has('management'))
+            {
+                $role->management = request()->management;
+            }
+            if (request()->has('order'))
+            {
+                $lastRole = Role::orderBy('order', 'desc')->first();
+                $oldRoleOrder = $role->order;
+                $newRuleOrder = ($lastRole->order > request()->order ? request()->order : $lastRole->order);
+
+                if ($newRuleOrder > $oldRoleOrder)
+                {
+                    Role::where([
+                        ['order', '>', $oldRoleOrder],
+                        ['order', '<=', $newRuleOrder],
+                    ])->decrement('order', 1);
+                }
+                else if ($newRuleOrder < $oldRoleOrder)
+                {
+                    Role::where([
+                        ['order', '<', $oldRoleOrder],
+                        ['order', '>=', $newRuleOrder],
+                    ])->increment('order', 1);
+                }
+
+                $role->order = $newRuleOrder;
+            }
+
+            $role->save();
+
+            DB::commit();
+
+            $this->setAfter(json_encode([
+                'message' => 'Role successfully updated',
+                'data' => $role
+            ]));
+            $returnMessage = response()->json([
+                'message' => 'Role successfully updated',
+                'data' => $role
+            ], 200);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 400);
+        }
+        catch (Exception $ex)
+        {
+            DB::rollBack();
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
-    public function destroy($id) {
-      try {
-        $role = Role::find($id);
-        $role->delete();
-        return response()->json(['message' => 'Role deleted successfully']);
-      } catch (Exception $e) {
-        return response()->json(['message' => 'An error has occurred'], 404);
-      }
+    public function destroy() {
+        $this->initLog(request());
+        $returnMessage = null;
+
+        try
+        {
+            DB::beginTransaction();
+
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('role', 'delete'))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(request()->all(), [
+                'id' => 'required|string|exists:roles,id',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $role = Role::find(request()->id);
+            $orderOfDeletedRole = $role->order;
+            $role->delete();
+            Role::where('order', '>', $orderOfDeletedRole)->decrement('order', 1);
+
+            DB::commit();
+
+            $this->setAfter(json_encode([
+                'message' => 'Role successfully deleted',
+                'data' => $role
+            ]));
+            $returnMessage = response()->json([
+                'message' => 'Role successfully deleted',
+                'data' => $role
+            ], 200);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 400);
+        }
+        catch (Exception $ex)
+        {
+            DB::rollBack();
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 }

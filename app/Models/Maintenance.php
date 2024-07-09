@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Maintenance extends Model
 {
@@ -30,4 +31,14 @@ class Maintenance extends Model
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Get the Building that owns the Maintenance
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function buildingBelongs(): BelongsTo
+    {
+        return $this->belongsTo(Building::class, 'building');
+    }
 }
