@@ -4,6 +4,7 @@ namespace App\Trait;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Symfony\Component\Uid\Ulid;
@@ -12,24 +13,27 @@ trait Attachment
 {
     public function saveAttachment(string $base64, array $pathSplitted, string $fileName) : array
     {
-        $path = Str::join(DIRECTORY_SEPARATOR, $pathSplitted);
+        $path = implode(DIRECTORY_SEPARATOR, $pathSplitted);
 
-        if(!File::isDirectory($path))
+        if(!File::isDirectory(Storage::path($path)))
         {
-            File::makeDirectory($path, 0755, true, true);
+            File::makeDirectory(Storage::path($path), 0755, true, true);
         }
 
         $result = $this->validateBase64($base64);
 
         if ($result['status'])
         {
-            $newFileName = Ulid::generate().'_'.$fileName;
-            $result['file']->storeAs($path, $newFileName);
+            $ulid = Ulid::generate();
+            $newFileName = $ulid .'_'.$fileName;
+
+            Storage::put(implode(DIRECTORY_SEPARATOR, [$path, $newFileName]), $result['content']);
 
             return [
+                'id' => $ulid,
                 'filename' => $newFileName,
                 'path' => storage_path($path),
-                'mimetype' => $this->getMimetype(Str::join(DIRECTORY_SEPARATOR, array_merge([storage_path($path), $newFileName]))),
+                'mimetype' => $this->getMimetype(implode(DIRECTORY_SEPARATOR, array_merge([Storage::path($path), $newFileName]))),
             ];
         }
 
@@ -38,11 +42,11 @@ trait Attachment
 
     public function deleteAttachment(array $pathSplitted, string $fileName) : bool
     {
-        $path = Str::join(DIRECTORY_SEPARATOR, array_merge($pathSplitted, [$fileName]));
+        $path = implode(DIRECTORY_SEPARATOR, array_merge($pathSplitted, [$fileName]));
 
-        if(File::isFile(storage_path($path)))
+        if(File::isFile(Storage::path($path)))
         {
-            unlink(storage_path($path));
+            unlink(Storage::path($path));
             return true;
         }
 
@@ -86,32 +90,13 @@ trait Attachment
 
         $tmpFileObject = new File($tmpFileName);
 
-        // guard against invalid mime types
-        $allowedMimeTypes = Arr::flatten($allowedMimeTypes);
-
-        // if there are no allowed mime types, then any type should be ok
-        if (empty($allowedMimeTypes))
-        {
-            return [
-                'status' => true,
-                'message' => 'File converted',
-                'mimetype' => $this->getMimetype($tmpFileName),
-                'file' => $tmpFileObject
-            ];
-        }
-
-        // Check the mime types
-        $validation = Validator::make(
-            ['file' => $tmpFileObject],
-            ['file' => 'mimes:' . implode(',', $allowedMimeTypes)]
-        );
-
-        if($validation->fails())
-        {
-            return false;
-        }
-
-        return $tmpFileObject;
+        return [
+            'status' => true,
+            'message' => 'File converted',
+            'mimetype' => $this->getMimetype($tmpFileName),
+            'content' => $fileBinaryData,
+            'file' => $tmpFileObject
+        ];
     }
 
     private function getMimetype(string $path) : string

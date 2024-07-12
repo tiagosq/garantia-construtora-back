@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use App\Models\Business;
-use App\Models\Role;
+use App\Models\Attachment as AttachmentModel;
 use App\Models\UserRole;
 use App\Trait\Log;
+use App\Trait\Attachment;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,7 @@ use Symfony\Component\Uid\Ulid;
 
 class BusinessController extends Controller
 {
-    use Log;
+    use Log, Attachment;
 
     public function index()
     {
@@ -27,6 +28,8 @@ class BusinessController extends Controller
 
         try
         {
+            $this->setBefore(json_encode(request()->all()));
+
             if (!$this->checkUserPermission('business', 'read'))
             {
                 throw new UnauthorizedException('Unauthorized');
@@ -65,7 +68,6 @@ class BusinessController extends Controller
 
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
-            $this->setBefore(json_encode(request()->all()));
 
             $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
                 return !in_array($key, $defaultKeys);
@@ -144,8 +146,9 @@ class BusinessController extends Controller
             'id' => 'required|string|exists:businesses,id',
         ]);
 
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
+        if($validator->fails())
+        {
+            throw new ValidationException($validator);
         }
 
         $userRoleWhereParams = [
@@ -156,7 +159,9 @@ class BusinessController extends Controller
 
         if (!empty($userRole))
         {
-            return response()->json(['message' => 'User has a association with this business, disassociate to set a new role.'], 400);
+            $tmpValidator = Validator::make([],[]);
+            $tmpValidator->errors()->add('user', '[validator.already-associated]');
+            throw new ValidationException($tmpValidator);
         }
 
         $userRole = new UserRole;
@@ -170,67 +175,171 @@ class BusinessController extends Controller
 
     public function disassociateUser()
     {
-        if (!$this->checkUserPermission('user', 'delete', request()->route()->id))
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
         {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('business', 'update', request()->route()->parameter('id')))
+            {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+
+            $validator = Validator::make(
+                request()->route()->parameters()
+            , [
+                'user' => 'required|string|exists:users,id',
+                'id' => 'required|string|exists:businesses,id',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $userRoleWhereParams = [
+                ['user', '=', request()->route()->parameter('user')],
+                ['business', '=', request()->route()->parameter('id')]
+            ];
+
+            $userRole = UserRole::where($userRoleWhereParams)->first();
+
+            if (empty($userRole))
+            {
+                $tmpValidator = Validator::make([],[]);
+                $tmpValidator->errors()->add('user', '[validator.not-associated]');
+                throw new ValidationException($tmpValidator);
+            }
+
+            $userRole->delete();
+
+            $returnMessage = response()->json(['message' => 'User disassociated successfully'], 200);
         }
-
-        $validator = Validator::make(
-            request()->route()->parameters()
-        , [
-            'user' => 'required|string|exists:users,id',
-            'id' => 'required|string|exists:businesses,id',
-        ]);
-
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
-        }
-
-        $userRoleWhereParams = [
-            ['user', '=', request()->route()->user],
-            ['business', '=', request()->route()->id]
-        ];
-
-        $userRole = UserRole::where($userRoleWhereParams)->first();
-
-        if (empty($userRole))
+        catch (UnauthorizedException $ex)
         {
-            return response()->json(['message' => 'User not associated with this business.'], 400);
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
         }
-
-        $userRole->delete();
-
-        return response()->json(['message' => 'User disassociated successfully'], 200);
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
+    public function show()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
+        {
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('business', 'read', request()->route()->parameter('id')))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
+                'id' => 'required|string|exists:businesses,id',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $query = Business::query();
+
+            $query->select([
+                'businesses.name as name',
+                'businesses.cnpj as cnpj',
+                'businesses.email as email',
+                'businesses.phone as phone',
+                'businesses.address as address',
+                'businesses.city as city',
+                'businesses.state as state',
+                'businesses.zip as zip',
+                'businesses.status as status',
+                'businesses.created_at as created_at',
+                'businesses.updated_at as updated_at',
+            ]);
+
+            $query->where('businesses.id', '=', request()->id);
+            $business = $query->first();
+
+            $this->setAfter(json_encode(['message' => 'Showing business available']));
+            $returnMessage =  response()->json(['message' => 'Showing business available', 'data' => $business]);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
+    }
 
     public function store()
     {
-        if (!$this->checkUserPermission('business', 'create', request()->route()->business))
-        {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $returnMessage = null;
+        $this->initLog(request());
 
-        $validator = Validator::make(
-            request()->all()
-        , [
-            'name' => 'required|string',
-            'cnpj' => 'required|string|unique:businesses,cnpj',
-            'email' => 'required|email|unique:businesses,email',
-            'phone' => 'required|string|unique:businesses,phone',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'zip' => 'nullable|string',
-        ]);
-
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
-        }
-
-        DB::beginTransaction();
         try
         {
+            $this->setBefore(json_encode(request()->all()));
+
+            DB::beginTransaction();
+
+            if (!$this->checkUserPermission('business', 'create'))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(request()->all(), [
+                'name' => 'required|string',
+                'cnpj' => 'required|string|unique:businesses,cnpj',
+                'email' => 'required|email|unique:businesses,email',
+                'phone' => 'required|string|unique:businesses,phone',
+                'address' => 'nullable|string',
+                'city' => 'nullable|string',
+                'state' => 'nullable|string',
+                'zip' => 'nullable|string',
+            ]);
+
+            if($validator->fails()){
+                return response()->json($validator->errors(), 400);
+            }
+
             $business = new Business();
             $ulid = Ulid::generate();
             $business->id = $ulid;
@@ -246,91 +355,248 @@ class BusinessController extends Controller
             $business->save();
 
             DB::commit();
-            return response()->json(['message' => 'Successfully business registration!', 'data' => $business])->status(201);
+
+            $this->setAfter(json_encode(['message' => 'Successfully business created']));
+            $returnMessage =  response()->json(['message' => 'Successfully business created', 'data' => $business], 201);
         }
-        catch (Exception $e)
+        catch (UnauthorizedException $ex)
         {
             DB::rollBack();
-            return response()->json(['message' => 'An error has occurred', 'error' => $e->getMessage()], 400);
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
         }
     }
 
     public function update()
     {
-        if (!$this->checkUserPermission('business', 'update', request()->route()->business))
-        {
-            return response()->json(['message' => 'Unauthorized'], 401);
-        }
+        $returnMessage = null;
+        $this->initLog(request());
 
-        $validator = Validator::make(
-            request()->all()
-        , [
-            'name' => 'required|string',
-            'cnpj' => 'required|string|unique:businesses,cnpj',
-            'email' => 'required|email|unique:businesses,email',
-            'phone' => 'required|string|unique:businesses,phone',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string',
-            'state' => 'nullable|string',
-            'zip' => 'nullable|string',
-        ]);
-
-        if($validator->fails()){
-            return response()->json($validator->errors(), 400);
-        }
-
-        DB::beginTransaction();
         try
         {
-            $business = Business::findOrFail(request()->business);
-            $ulid = Ulid::generate();
-            $business->id = $ulid;
-            $business->name = request()->name;
-            $business->cnpj = request()->cnpj;
-            $business->email = request()->email;
-            $business->phone = request()->phone;
-            $business->address = (request()->has('address') ? request()->address : null);
-            $business->city = (request()->has('city') ? request()->city : null);
-            $business->state = (request()->has('state') ? request()->state : null);
-            $business->zip = (request()->has('zip') ? request()->zip : null);
-            $business->status = true;
+            $this->setBefore(json_encode(request()->all()));
+
+            DB::beginTransaction();
+
+            if (!$this->checkUserPermission('business', 'update', request()->route()->parameter('id')))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(array_merge(
+                    request()->route()->parameters(),
+                    request()->all()
+                ) , [
+                'id' => 'required|string|exists:businesses,id',
+                'name' => 'sometimes|string',
+                'cnpj' => 'sometimes|string|unique:businesses,cnpj',
+                'email' => 'sometimes|email|unique:businesses,email',
+                'phone' => 'sometimes|string|unique:businesses,phone',
+                'address' => 'sometimes|string',
+                'city' => 'sometimes|string',
+                'state' => 'sometimes|string',
+                'zip' => 'sometimes|string',
+            ]);
+
+            if($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $business = Business::find(request()->route()->id);
+            if (request()->has('name'))
+            {
+                $business->name = request()->name;
+            }
+            if (request()->has('cnpj'))
+            {
+                $business->cnpj = request()->cnpj;
+            }
+            if (request()->has('email'))
+            {
+                $business->email = request()->email;
+            }
+            if (request()->has('phone'))
+            {
+                $business->phone = request()->phone;
+            }
+            if (request()->has('address'))
+            {
+                $business->address = request()->address;
+            }
+            if (request()->has('city'))
+            {
+                $business->city = request()->city;
+            }
+            if (request()->has('state'))
+            {
+                $business->state = request()->state;
+            }
+            if (request()->has('zip'))
+            {
+                $business->zip = request()->zip;
+            }
+            if (request()->has('status'))
+            {
+                $business->status = request()->status;
+            }
+
             $business->save();
 
             DB::commit();
-            return response()->json(['message' => 'Successfully business registration!', 'data' => $business])->status(201);
+
+            $this->setAfter(json_encode(['message' => 'Successfully business updated']));
+            $returnMessage =  response()->json(['message' => 'Successfully business updated', 'data' => $business]);
         }
-        catch (Exception $e)
+        catch (UnauthorizedException $ex)
         {
             DB::rollBack();
-            return response()->json(['message' => 'An error has occurred', 'error' => $e->getMessage()], 400);
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
         }
     }
 
-  /*public function index(Request $request) {
-    $request->validate([
-      'limit' => 'min:0|max:20',
-      'skip' => 'min:0',
-    ]);
-    $businesses = Business::all();
-    return response()->json($businesses, 200);
-  }
+    public function destroy()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
 
-  public function show($id) {
-    $business = Business::find($id);
-    if($business) {
-      return response()->json($business, 200);
+        try
+        {
+            $this->setBefore(json_encode(request()->all()));
+
+            DB::beginTransaction();
+
+            if (!$this->checkUserPermission('business', 'delete', request()->route()->parameter('id')))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
+                'id' => 'required|string|exists:businesses,id',
+            ]);
+
+            if ($validator->fails())
+            {
+                throw new ValidationException($validator);
+            }
+
+            $business = Business::find(request()->route()->parameter('id'))->first();
+            $buildings = $business->buildings;
+
+            foreach ($buildings as $building)
+            {
+                $maintenances = $building->maintenances;
+
+                foreach ($maintenances as $maintenance)
+                {
+                    $questions = $maintenance->questions;
+
+                    foreach ($questions as $question)
+                    {
+                        $questionId = $question->id;
+                        $pathSplitted = [
+                            $business->id,
+                            $building->id,
+                            $maintenance->id,
+                            $question->id,
+                        ];
+
+
+                        $attachments = AttachmentModel::where('question', '=', $questionId)->get();
+
+                        foreach ($attachments as $attachment)
+                        {
+                            $this->deleteAttachment($pathSplitted, $attachment->name);
+                            $attachment->delete();
+                        }
+
+                        $question->delete();
+                    }
+
+                    $maintenance->delete();
+                }
+
+                $building->delete();
+            }
+
+            $storageFolder = Storage::path($business->id);
+            if (File::exists($storageFolder))
+            {
+                File::deleteDirectory($storageFolder);
+            }
+
+            foreach ($business->userRoles as $userRole)
+            {
+                $userRole->delete();
+            }
+
+            $business->delete();
+
+            DB::commit();
+
+            $this->setAfter(json_encode(['message' => 'Successfully business deleted']));
+            $returnMessage =  response()->json(['message' => 'Successfully business deleted']);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
-    return response()->json(['message' => 'Business not found'], 404);
-  }
-
-
-  public function destroy($id) {
-    try {
-      $business = Business::find($id);
-      $business->delete();
-      return response()->json(['message' => 'Business deleted successfully'], 200);
-    } catch (Exception $e) {
-      return response()->json(['message' => 'An error has occurred'], 404);
-    }
-  }*/
 }

@@ -40,7 +40,10 @@ class UserController extends Controller
                 'business'
             ];
 
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'limit' => 'sometimes|numeric|min:20|max:100',
                 'page' => 'sometimes|numeric|min:1',
                 'business' => 'sometimes|string|exists:businesses,id',
@@ -68,7 +71,7 @@ class UserController extends Controller
 
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
-            $business = (request()->has('business') ? request()->business : null);
+            $business = request()->route()->parameter('business');
 
             $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
                 return !in_array($key, $defaultKeys);
@@ -364,6 +367,8 @@ class UserController extends Controller
 
         try
         {
+            $this->setBefore(json_encode(request()->all()));
+
             DB::beginTransaction();
 
             if (!$this->checkUserPermission('user', 'update', (request()->has('business') ? request()->business : null)))
@@ -371,9 +376,10 @@ class UserController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $this->setBefore(json_encode(request()->all()));
-
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'id' => 'required|string|exists:users,id',
                 'fullname' => 'sometimes|string',
                 'email' => 'sometimes|email|unique:users',

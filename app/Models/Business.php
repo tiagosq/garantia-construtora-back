@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Business extends Model
 {
@@ -29,4 +30,24 @@ class Business extends Model
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    /**
+     * Get all of the buildings for the Business
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function buildings(): HasMany
+    {
+        return $this->hasMany(Building::class, 'business', 'id');
+    }
+
+    /**
+     * Get all of the userRoles for the Business
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function userRoles(): HasMany
+    {
+        return $this->hasMany(UserRole::class, 'business', 'id');
+    }
 }

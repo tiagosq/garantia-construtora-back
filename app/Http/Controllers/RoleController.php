@@ -26,7 +26,7 @@ class RoleController extends Controller {
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('role', 'read', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -38,7 +38,10 @@ class RoleController extends Controller {
                 'business'
             ];
 
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'limit' => 'sometimes|numeric|min:20|max:100',
                 'page' => 'sometimes|numeric|min:1',
                 'business' => 'sometimes|string|exists:businesses,id',
@@ -328,16 +331,19 @@ class RoleController extends Controller {
 
         try
         {
-            DB::beginTransaction();
-
             $this->setBefore(json_encode(request()->all()));
+
+            DB::beginTransaction();
 
             if (!$this->checkUserPermission('role', 'update'))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'id' => 'required|string|exists:roles,id',
                 'name' => 'required|string|max:16',
                 'permissions' => 'required|json',

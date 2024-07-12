@@ -33,40 +33,56 @@ Route::group([
 
 Route::group([
     'middleware' => 'api',
-    'prefix' => 'buildings'
-], function ($router) {
-    // Basic CRUD
-    Route::post('/', [BuildingController::class, 'store'])->middleware('auth:api')->name('buildings.store');
-    Route::get('/', [BuildingController::class, 'index'])->middleware('auth:api')->name('buildings.index');
-    Route::put('/{id}', [BuildingController::class, 'update'])->middleware('auth:api')->name('buildings.update');
-    Route::delete('/{id}', [BuildingController::class, 'delete'])->middleware('auth:api')->name('buildings.delete');
-
-    // Routes using others controllers
-    Route::get('/{building}/maintenances', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('buildings.maintenances.index');
-    Route::get('/{building}/questions', [QuestionController::class, 'index'])->middleware('auth:api')->name('buildings.questions.index');
-
-});
-
-Route::group([
-    'middleware' => 'api',
     'prefix' => 'businesses'
 ], function ($router) {
     // Basic CRUD
     Route::post('/', [BusinessController::class, 'store'])->middleware('auth:api')->name('businesses.store');
     Route::get('/', [BusinessController::class, 'index'])->middleware('auth:api')->name('businesses.index');
+    Route::get('/{id}', [BusinessController::class, 'show'])->middleware('auth:api')->name('businesses.show');
     Route::put('/{id}', [BusinessController::class, 'update'])->middleware('auth:api')->name('businesses.update');
-    Route::delete('/{id}', [BusinessController::class, 'delete'])->middleware('auth:api')->name('businesses.delete');
+    Route::delete('/{id}', [BusinessController::class, 'destroy'])->middleware('auth:api')->name('businesses.destroy');
 
     // Other operations
     Route::post('/{id}/associate/{user}', [BusinessController::class, 'associateUser'])->middleware('auth:api')->name('businesses.associate.user');
     Route::delete('/{id}/disassociate/{user}', [BusinessController::class, 'disassociateUser'])->middleware('auth:api')->name('businesses.disassociate.user');
 
     // Routes using others controllers
-    Route::get('/{business}/roles', [RoleController::class, 'showAvailablesToUse'])->middleware('auth:api')->name('businesses.roles.index');
-    Route::get('/{business}/users', [UserController::class, 'index'])->middleware('auth:api')->name('businesses.users.index');
-    Route::get('/{business}/maintenances', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('businesses.maintenances.index');
-    Route::get('/{business}/questions', [QuestionController::class, 'index'])->middleware('auth:api')->name('businesses.questions.index');
-    Route::get('/{business}/logs', [LogController::class, 'index'])->middleware('auth:api')->name('businesses.index');
+    Route::group([
+        'middleware' => 'api',
+        'prefix' => '{business}/buildings'
+    ], function ($router) {
+        // Basic CRUD
+        Route::post('/', [BuildingController::class, 'store'])->middleware('auth:api')->name('buildings.store');
+        Route::get('/', [BuildingController::class, 'index'])->middleware('auth:api')->name('buildings.index');
+        Route::get('/{id}', [BuildingController::class, 'show'])->middleware('auth:api')->name('buildings.show');
+        Route::put('/{id}', [BuildingController::class, 'update'])->middleware('auth:api')->name('buildings.update');
+        Route::delete('/{id}', [BuildingController::class, 'destroy'])->middleware('auth:api')->name('buildings.destroy');
+
+        Route::group([
+            'middleware' => 'api',
+            'prefix' => '{building}/maintenances'
+        ], function ($router) {
+            // Basic CRUD.
+            Route::post('/', [MaintenanceController::class, 'store'])->middleware('auth:api')->name('maintenances.store');
+            Route::get('/', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('maintenances.index');
+            Route::get('/{id}', [MaintenanceController::class, 'show'])->middleware('auth:api')->name('maintenances.show');
+            Route::put('/{id}', [MaintenanceController::class, 'update'])->middleware('auth:api')->name('maintenances.update');
+            Route::delete('/{id}', [MaintenanceController::class, 'destroy'])->middleware('auth:api')->name('maintenances.destroy');
+
+            Route::group([
+                'middleware' => 'api',
+                'prefix' => '{maintenance}/questions'
+            ], function ($router) {
+                // Basic CRUD
+                Route::post('/', [QuestionController::class, 'store'])->middleware('auth:api')->name('questions.store');
+                Route::get('/', [QuestionController::class, 'index'])->middleware('auth:api')->name('questions.index');
+                Route::get('/{id}', [QuestionController::class, 'show'])->middleware('auth:api')->name('questions.show');
+                Route::put('/{id}', [QuestionController::class, 'update'])->middleware('auth:api')->name('questions.update');
+                Route::delete('/{id}', [QuestionController::class, 'destroy'])->middleware('auth:api')->name('questions.destroy');
+            });
+
+        });
+    });
 });
 
 Route::group([
@@ -76,30 +92,6 @@ Route::group([
     Route::get('/', [LogController::class, 'index'])->middleware('auth:api')->name('logs.index');
 });
 
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'maintenances'
-], function ($router) {
-    // Basic CRUD
-    Route::get('/', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('maintenances.index');
-
-    // Routes using other controllers
-    Route::get('/{maintenance}/questions', [QuestionController::class, 'index'])->middleware('auth:api')->name('maintenances.questions.index');
-});
-
-Route::group([
-    'middleware' => 'api',
-    'prefix' => 'questions'
-], function ($router) {
-    // Basic CRUD
-    // OBS: The create, update and delete question's route will operate the attachment's model too,
-    // necessary user have permission to manipulate it otherwise they get a code 401 (Unauthorized).
-    Route::post('/', [QuestionController::class, 'store'])->middleware('auth:api')->name('questions.store');
-    Route::get('/', [QuestionController::class, 'index'])->middleware('auth:api')->name('questions.index');
-    Route::get('/{id}', [QuestionController::class, 'show'])->middleware('auth:api')->name('questions.show');
-    Route::put('/{id}', [QuestionController::class, 'update'])->middleware('auth:api')->name('questions.update');
-    Route::delete('/{id}', [QuestionController::class, 'destroy'])->middleware('auth:api')->name('questions.destroy');
-});
 
 Route::group([
     'middleware' => 'api',
@@ -134,4 +126,9 @@ Route::group([
     Route::delete('/{id}', [UserController::class, 'destroyOwn'])->middleware('auth:api')->name('users.destroy.own');
 });
 
+Route::fallback(function(){
+    return response()->json([
+        'message' => 'Resource not found'
+    ], 404);
+});
 

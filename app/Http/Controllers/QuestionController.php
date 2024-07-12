@@ -3,15 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\Attachment as AttachmentModel;
 use App\Trait\Attachment;
 use App\Trait\Log;
+use Directory;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\MessageBag;
 use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\Uid\Ulid;
 
 class QuestionController extends Controller
 {
@@ -24,7 +29,9 @@ class QuestionController extends Controller
 
         try
         {
-            if (!$this->checkUserPermission('question', 'create', (request()->has('business') ? request()->business : null)))
+            $this->setBefore(json_encode(request()->all()));
+
+            if (!$this->checkUserPermission('question', 'read', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -38,7 +45,10 @@ class QuestionController extends Controller
                 'maintenance',
             ];
 
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'limit' => 'sometimes|numeric|min:20|max:100',
                 'page' => 'sometimes|numeric|min:1',
                 'business' => 'sometimes|string|exists:businesses,id',
@@ -68,10 +78,9 @@ class QuestionController extends Controller
 
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
-            $business = (request()->has('business') ? request()->business : null);
-            $building = (request()->has('building') ? request()->building : null);
-            $maintenance = (request()->has('maintenance') ? request()->maintenance : null);
-            $this->setBefore(json_encode(request()->all()));
+            $business = request()->route()->parameter('business');
+            $building = request()->route()->paramenter('building');
+            $maintenance = request()->route()->parameter('maintenance');
 
             $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
                 return !in_array($key, $defaultKeys);
@@ -121,10 +130,10 @@ class QuestionController extends Controller
                 $query->where('maintenances.id', '=', $maintenance);
             }
 
-            $maintenances = $query->paginate($limit, ['*'], 'page', $page);
+            $questions = $query->paginate($limit, ['*'], 'page', $page);
 
-            $this->setAfter(json_encode(['message' => 'Showing maintenances available']));
-            $returnMessage =  response()->json(['message' => 'Showing maintenances available', 'data' => $maintenances]);
+            $this->setAfter(json_encode(['message' => 'Showing questions available']));
+            $returnMessage =  response()->json(['message' => 'Showing questions available', 'data' => $questions]);
         }
         catch (UnauthorizedException $ex)
         {
@@ -157,12 +166,15 @@ class QuestionController extends Controller
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('question', 'read', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $validator = Validator::make(request()->all(), [
+            $validator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ) , [
                 'id' => 'required|string|exists:questions,id',
             ]);
 
@@ -226,33 +238,22 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'create', (request()->has('business') ? request()->business : null)))
-            {
-                throw new UnauthorizedException('Unauthorized');
-            }
-
-            if (request()->has('attachments') && !$this->checkUserPermission('attachment', 'create', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('question', 'create', request()->route()->parameter('business')) ||
+                request()->has('attachments') && !$this->checkUserPermission('attachment', 'create', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
             $errorBag = new MessageBag();
-            $requestTreated = request()->all();
+            $requestTreated = array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            );
 
             // Attachment validator
-            $jsonValidator = Validator::make(request()->only('attachments'), [
-                'attachments' => 'sometimes|json',
-            ]);
-
-            if ($jsonValidator->fails())
+            if (!empty($requestTreated['attachments']))
             {
-                $errorBag->merge($jsonValidator->errors());
-            }
-            else if (!empty($requestTreated['attachments']))
-            {
-                $requestTreated['attachments'] = json_decode($requestTreated['attachments'], true);
-
-                $jsonValidator = Validator::make(request()->only('attachments'), [
+                $jsonValidator = Validator::make($requestTreated, [
                     'attachments' => 'sometimes|array',
                     'attachments.*.filename' => 'required_with:attachments|string',
                     'attachments.*.content' => 'required_with:attachments|string',
@@ -285,11 +286,13 @@ class QuestionController extends Controller
             }
 
             $question = new Question();
+            $question->id = Ulid::generate();
             $question->question = $requestTreated['question'];
             $question->answer = $requestTreated['answer'];
             $question->status = $requestTreated['status'];
             $question->maintenance = $requestTreated['maintenance'];
             $question->save();
+
 
             if (!empty($requestTreated['attachments']))
             {
@@ -307,11 +310,13 @@ class QuestionController extends Controller
 
                 $filesSavedOnStorage = [];
 
+
                 foreach ($requestTreated['attachments'] as &$file)
                 {
                     $attachmentInfo = $this->saveAttachment($file['content'], $pathSplitted, $file['filename']);
 
-                    $attachment = new Attachment();
+                    $attachment = new AttachmentModel();
+                    $attachment->id = $attachmentInfo['id'];
                     $attachment->name = $attachmentInfo['filename'];
                     $attachment->path = $attachmentInfo['path'];
                     $attachment->type = $attachmentInfo['mimetype'];
@@ -365,29 +370,23 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'update', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('question', 'update', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            if ((request()->has('attachments_to_add') || request()->has('attachments_to_remove')) && !$this->checkUserPermission('attachment', 'update', (request()->has('business') ? request()->business : null)))
+            if ((request()->has('attachments_to_add') || request()->has('attachments_to_remove')) && !$this->checkUserPermission('attachment', 'update', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
             $errorBag = new MessageBag();
-            $requestTreated = request()->all();
+            $requestTreated = array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            );
 
-            // Attachment to preserve validator
-            $jsonValidator = Validator::make(request()->only('attachments_to_add'), [
-                'attachments_to_add' => 'sometimes|json',
-            ]);
-
-            if ($jsonValidator->fails())
-            {
-                $errorBag->merge($jsonValidator->errors());
-            }
-            else if (!empty($requestTreated['attachments_to_add']))
+            if (!empty($requestTreated['attachments_to_add']))
             {
                 $requestTreated['attachments_to_add'] = json_decode($requestTreated['attachments_to_add'], true);
 
@@ -403,16 +402,7 @@ class QuestionController extends Controller
                 }
             }
 
-            // Attachment to preserve validator
-            $jsonValidator = Validator::make(request()->only('attachments_to_remove'), [
-                'attachments_to_remove' => 'sometimes|json',
-            ]);
-
-            if ($jsonValidator->fails())
-            {
-                $errorBag->merge($jsonValidator->errors());
-            }
-            else if (!empty($requestTreated['attachments_to_remove']))
+            if (!empty($requestTreated['attachments_to_remove']))
             {
                 $requestTreated['attachments_to_remove'] = json_decode($requestTreated['attachments_to_remove'], true);
 
@@ -490,7 +480,7 @@ class QuestionController extends Controller
                 {
                     $attachmentInfo = $this->saveAttachment($file['content'], $pathSplitted, $file['filename']);
 
-                    $attachment = new Attachment();
+                    $attachment = new AttachmentModel();
                     $attachment->name = $attachmentInfo['filename'];
                     $attachment->path = $attachmentInfo['path'];
                     $attachment->type = $attachmentInfo['mimetype'];
@@ -507,7 +497,7 @@ class QuestionController extends Controller
                 {
                     if ($this->deleteAttachment($pathSplitted, $file['filename']))
                     {
-                        $attachment = Attachment::where('name', '=', $file['filename']);
+                        $attachment = AttachmentModel::where('name', '=', $file['filename']);
                         $attachment->delete();
                     }
                 }
@@ -554,13 +544,15 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'delete', (request()->has('business') ? request()->business : null)) ||
-                !$this->checkUserPermission('attachment', 'delete', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('question', 'delete', request()->route()->parameter('business')))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $questionValidator = Validator::make(request()->all(), [
+            $questionValidator = Validator::make(array_merge(
+                request()->route()->parameters(),
+                request()->all()
+            ), [
                 'id' => 'required|string|exists:questions,id',
             ]);
 
@@ -569,7 +561,7 @@ class QuestionController extends Controller
                 throw new ValidationException($questionValidator);
             }
 
-            $question = Question::find(request()->id);
+            $question = Question::find(request()->route()->parameter('id'))->first();
 
             $maintenance = $question->maintenanceBelongs;
             $building = $maintenance->buildingBelongs;
@@ -582,17 +574,21 @@ class QuestionController extends Controller
                 $question->id,
             ];
 
-            $question->delete();
-
-            $attachments = Attachment::where('question', '=', request()->id);
+            $attachments = AttachmentModel::where('question', '=', $question->id)->get();
 
             foreach ($attachments as $attachment)
             {
-                if ($this->deleteAttachment($pathSplitted, $attachment->name))
-                {
-                    $attachment->delete();
-                }
+                $this->deleteAttachment($pathSplitted, $attachment->name);
+                $attachment->delete();
             }
+
+            $storageFolder = Storage::path(implode(DIRECTORY_SEPARATOR, $pathSplitted));
+            if (File::exists($storageFolder))
+            {
+                File::deleteDirectory($storageFolder);
+            }
+
+            $question->delete();
 
             DB::commit();
 

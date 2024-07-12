@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Building extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
+        'id',
         'name',
         'address',
         'city',
@@ -40,5 +43,15 @@ class Building extends Model
     public function businessBelongs(): BelongsTo
     {
         return $this->belongsTo(Business::class, 'business');
+    }
+
+    /**
+     * Get all of the maintenances for the Building
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function maintenances(): HasMany
+    {
+        return $this->hasMany(Maintenance::class, 'building', 'id');
     }
 }
