@@ -501,11 +501,16 @@ class AuthController extends Controller
                     Mail::to($user)->send(new PasswordReseted($user));
                     $returnMessage = response()->json(['message' => 'Password reseted!'], 200);
                 }
-                throw new Exception('Error on reset password!');
+                else
+                {
+                    throw new Exception('Error on reset password!');
+                }
             }
-
-            $validator->errors()->add('token', 'validation.timeout');
-            throw new ValidationException($validator);
+            else
+            {
+                $validator->errors()->add('token', 'validation.timeout');
+                throw new ValidationException($validator);
+            }
         }
         catch (ValidationException $ex)
         {
