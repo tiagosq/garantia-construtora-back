@@ -69,17 +69,7 @@ Route::group([
             Route::put('/{id}', [MaintenanceController::class, 'update'])->middleware('auth:api')->name('maintenances.update');
             Route::delete('/{id}', [MaintenanceController::class, 'destroy'])->middleware('auth:api')->name('maintenances.destroy');
 
-            Route::group([
-                'middleware' => 'api',
-                'prefix' => '{maintenance}/questions'
-            ], function ($router) {
-                // Basic CRUD
-                Route::post('/', [QuestionController::class, 'store'])->middleware('auth:api')->name('questions.store');
-                Route::get('/', [QuestionController::class, 'index'])->middleware('auth:api')->name('questions.index');
-                Route::get('/{id}', [QuestionController::class, 'show'])->middleware('auth:api')->name('questions.show');
-                Route::put('/{id}', [QuestionController::class, 'update'])->middleware('auth:api')->name('questions.update');
-                Route::delete('/{id}', [QuestionController::class, 'destroy'])->middleware('auth:api')->name('questions.destroy');
-            });
+
 
         });
     });
@@ -92,6 +82,17 @@ Route::group([
     Route::get('/', [LogController::class, 'index'])->middleware('auth:api')->name('logs.index');
 });
 
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'questions'
+], function ($router) {
+    // Basic CRUD
+    Route::post('/', [QuestionController::class, 'store'])->middleware('auth:api')->name('questions.store');
+    Route::get('/', [QuestionController::class, 'index'])->middleware('auth:api')->name('questions.index');
+    Route::get('/{id}', [QuestionController::class, 'show'])->middleware('auth:api')->name('questions.show');
+    Route::put('/{id}', [QuestionController::class, 'update'])->middleware('auth:api')->name('questions.update');
+    Route::delete('/{id}', [QuestionController::class, 'destroy'])->middleware('auth:api')->name('questions.destroy');
+});
 
 Route::group([
     'middleware' => 'api',

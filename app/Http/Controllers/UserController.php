@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\UserRole;
 use App\Trait\Log;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
@@ -24,7 +26,7 @@ class UserController extends Controller
     /**
     * @OA\Get(
     *      path="/api/users/",
-    *      operationId="index",
+    *      operationId="users.index",
     *      security={{"bearer_token":{}}},
     *      description="On this route, we can set *-order with 'asc' or 'desc'
     *          and *-search with any word, in * we can set any DB column and to
@@ -73,153 +75,9 @@ class UserController extends Controller
 
             $this->setBefore(json_encode(request()->all()));
 
-            // Declare your fixed params here
-            $defaultKeys = [
-                'limit',
-                'page',
-                'business'
-            ];
-
-            $columnsToSearch = [];
-            $columnsToOrder = [];
-            $columnsOperationSearch = [
-                'LIKE' => [
-                    'email',
-                    'fullname',
-                    'phone',
-                    'status',
-                    'role',
-                ],
-                'BETWEEN' => [
-                    'created_at',
-                    'updated_at',
-                    'email_verified_at',
-                ],
-            ];
-
-            $validator = Validator::make(array_merge(
-                request()->route()->parameters(),
-                request()->all()
-            ) , [
-                'limit' => 'sometimes|numeric|min:20|max:100',
-                'page' => 'sometimes|numeric|min:1',
-                'business' => 'sometimes|string|exists:businesses,id',
-                // 'dbColumnName-order' => 'asc|desc'
-                // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
-                '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
-                    if (!in_array($attribute, $defaultKeys))
-                    {
-                        foreach (['-order', '-search'] as $suffix)
-                        {
-                            if (substr($attribute, -strlen($suffix)) === $suffix)
-                            {
-                                $columnName = str_replace($suffix, '', $attribute);
-                                $operationType = substr($suffix, 1);
-
-                                if (!Schema::hasColumn('users', $columnName))
-                                {
-                                    $fail('[validation.column]');
-                                }
-
-                                switch ($operationType)
-                                {
-                                    case 'order':
-                                        if (!in_array($value, ['asc', 'desc']))
-                                        {
-                                            $fail('[validation.order]');
-                                        }
-                                        else
-                                        {
-                                            $columnsToOrder[$columnName] = $value;
-                                        }
-                                        break;
-                                    case 'search':
-                                        if (in_array($columnName, $columnsOperationSearch['LIKE']))
-                                        {
-                                            $columnsToSearch[$columnName]['operation'] = 'LIKE';
-                                        }
-                                        else if (in_array($columnName, $columnsOperationSearch['BETWEEN']))
-                                        {
-                                            $columnsToSearch[$columnName]['operation'] = 'BETWEEN';
-                                        }
-                                        else
-                                        {
-                                            $fail('[validation.search-operation-not-found');
-                                        }
-                                        $columnsToSearch[$columnName]['values'] = explode('|', $value);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                },
-            ]);
-
-            if($validator->fails())
-            {
-                throw new ValidationException($validator);
-            }
-
-            $limit = (request()->has('limit') ? request()->limit : 20);
-            $page = (request()->has('page') ? (request()->page - 1) : 0);
-            $business = (request()->has('business') ? request()->only('business') : null);
-
-            $query = User::query();
-
-            $query->select([
-                'users.email as email',
-                'users.fullname as fullname',
-                'users.phone as phone',
-                'users.status as status',
-                'users.email_verified_at as email_verified_at',
-                'roles.name as role',
-                'users.created_at as created_at',
-                'users.updated_at as updated_at',
-            ]);
-
-            if (!empty($columnsToOrder))
-            {
-                foreach ($columnsToOrder as $column => $direction)
-                {
-                    $query->orderBy($column, $direction);
-                }
-            }
-            else
-            {
-                $query->orderBy('email', 'asc');
-            }
-
-            $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
-            $query->leftJoin('roles', 'roles.id', '=', 'user_roles.role');
-            $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
-
-            foreach ($columnsToSearch as $column => $whereInfo)
-            {
-                if ($whereInfo['operation'] == 'BETWEEN')
-                {
-                    if (count($whereInfo['values']) == 1)
-                    {
-                        $query->whereBetween($column, [$whereInfo['values'][0], $whereInfo['values'][0]]);
-                    }
-                    else if (count($whereInfo['values']) % 2 == 0)
-                    {
-                        for ($i = 0; $i < count($whereInfo['values']); $i + 2)
-                        {
-                            $query->whereBetween($column, [$whereInfo['values'][$i], $whereInfo['values'][($i + 1)]]);
-                        }
-                    }
-                }
-                else if ($whereInfo['operation'] == 'LIKE')
-                {
-                    foreach ($whereInfo['values'] as $value)
-                    {
-                        $query->where($column, 'LIKE', '%'.$value.'%');
-                    }
-                }
-            }
-
+            $query = $this->filteredResults(request());
+            $limit = (request()->has('limit') ? request()->only('limit')[0] : 20);
+            $page = (request()->has('page') ? (request()->only('page')[0] - 1) : 0);
             $users = $query->paginate($limit, ['*'], 'page', $page);
 
             $this->setAfter(json_encode(['message' => 'Showing users available']));
@@ -250,7 +108,7 @@ class UserController extends Controller
     /**
     * @OA\Get(
     *      path="/api/users/export",
-    *      operationId="export",
+    *      operationId="users.export",
     *      security={{"bearer_token":{}}},
     *      description="On this route, we can set *-order with 'asc' or 'desc'
     *          and *-search with any word, in * we can set any DB column and to
@@ -299,147 +157,7 @@ class UserController extends Controller
 
             $this->setBefore(json_encode(request()->all()));
 
-            // Declare your fixed params here
-            $defaultKeys = [
-                'business'
-            ];
-
-            $columnsToSearch = [];
-            $columnsToOrder = [];
-            $columnsOperationSearch = [
-                'LIKE' => [
-                    'email',
-                    'fullname',
-                    'phone',
-                    'status',
-                    'role',
-                ],
-                'BETWEEN' => [
-                    'created_at',
-                    'updated_at',
-                    'email_verified_at',
-                ],
-            ];
-
-            $validator = Validator::make(array_merge(
-                request()->route()->parameters(),
-                request()->all()
-            ) , [
-                'business' => 'sometimes|string|exists:businesses,id',
-                // 'dbColumnName-order' => 'asc|desc'
-                // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
-                '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
-                    if (!in_array($attribute, $defaultKeys))
-                    {
-                        foreach (['-order', '-search'] as $suffix)
-                        {
-                            if (substr($attribute, -strlen($suffix)) === $suffix)
-                            {
-                                $columnName = str_replace($suffix, '', $attribute);
-                                $operationType = substr($suffix, 1);
-
-                                if (!Schema::hasColumn('users', $columnName))
-                                {
-                                    $fail('[validation.column]');
-                                }
-
-                                switch ($operationType)
-                                {
-                                    case 'order':
-                                        if (!in_array($value, ['asc', 'desc']))
-                                        {
-                                            $fail('[validation.order]');
-                                        }
-                                        else
-                                        {
-                                            $columnsToOrder[$columnName] = $value;
-                                        }
-                                        break;
-                                    case 'search':
-                                        if (in_array($columnName, $columnsOperationSearch['LIKE']))
-                                        {
-                                            $columnsToSearch[$columnName]['operation'] = 'LIKE';
-                                        }
-                                        else if (in_array($columnName, $columnsOperationSearch['BETWEEN']))
-                                        {
-                                            $columnsToSearch[$columnName]['operation'] = 'BETWEEN';
-                                        }
-                                        else
-                                        {
-                                            $fail('[validation.search-operation-not-found');
-                                        }
-                                        $columnsToSearch[$columnName]['values'] = explode('|', $value);
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                },
-            ]);
-
-            if($validator->fails())
-            {
-                throw new ValidationException($validator);
-            }
-
-            $business = request()->route()->parameter('business');
-            $query = User::query();
-
-            $query->select([
-                'users.email as email',
-                'users.fullname as fullname',
-                'users.phone as phone',
-                'users.status as status',
-                'users.email_verified_at as email_verified_at',
-                'roles.name as role',
-                'users.created_at as created_at',
-                'users.updated_at as updated_at',
-            ]);
-
-            if (!empty($columnsToOrder))
-            {
-                foreach ($columnsToOrder as $column => $direction)
-                {
-                    $query->orderBy($column, $direction);
-                }
-            }
-            else
-            {
-                $query->orderBy('email', 'asc');
-            }
-
-            $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
-            $query->leftJoin('roles', 'roles.id', '=', 'user_roles.role');
-            $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
-
-            foreach ($columnsToSearch as $column => $whereInfo)
-            {
-                if ($whereInfo['operation'] == 'BETWEEN')
-                {
-                    if (count($whereInfo['values']) == 1)
-                    {
-                        $query->whereBetween($column, [$whereInfo['values'][0], $whereInfo['values'][0]]);
-                    }
-                    else if (count($whereInfo['values']) % 2 == 0)
-                    {
-                        for ($i = 0; $i < count($whereInfo['values']); $i + 2)
-                        {
-                            $query->whereBetween($column, [$whereInfo['values'][$i], $whereInfo['values'][($i + 1)]]);
-                        }
-                    }
-                }
-                else if ($whereInfo['operation'] == 'LIKE')
-                {
-                    foreach ($whereInfo['values'] as $value)
-                    {
-                        $query->where($column, 'LIKE', '%'.$value.'%');
-                    }
-                }
-            }
-
-            $users = $query->get();
+            $users = $this->filteredResults(request())->get();
 
             $path = implode(DIRECTORY_SEPARATOR, ['export']);
 
@@ -515,7 +233,7 @@ class UserController extends Controller
     /**
     * @OA\Get(
     *      path="/api/users/{id}",
-    *      operationId="show",
+    *      operationId="users.show",
     *      security={{"bearer_token":{}}},
     *      description="<b>Important:</b><br>
     *          Business's ID need to be setted if user authenticated:<br>
@@ -642,7 +360,7 @@ class UserController extends Controller
     /**
     * @OA\Get(
     *      path="/api/users/own",
-    *      operationId="showOwn",
+    *      operationId="users.showOwn",
     *      security={{"bearer_token":{}}},
     *      tags={"users"},
     *      summary="Show user authenticated info",
@@ -735,7 +453,7 @@ class UserController extends Controller
     /**
     * @OA\Post(
     *      path="/api/users",
-    *      operationId="store",
+    *      operationId="users.store",
     *      security={{"bearer_token":{}}},
     *      summary="Register a new user on system when authenticated needs do it",
     *      tags={"users"},
@@ -886,7 +604,7 @@ class UserController extends Controller
     /**
     * @OA\Put(
     *      path="/api/users/{id}",
-    *      operationId="update",
+    *      operationId="users.update",
     *      security={{"bearer_token":{}}},
     *      summary="Update informations of a specific user on system when authenticated needs do it",
     *      tags={"users"},
@@ -1075,7 +793,7 @@ class UserController extends Controller
     /**
     * @OA\Put(
     *      path="/api/users/own",
-    *      operationId="updateOwn",
+    *      operationId="users.updateOwn",
     *      security={{"bearer_token":{}}},
     *      summary="Update informations of authenticated user on system",
     *      tags={"users"},
@@ -1206,7 +924,7 @@ class UserController extends Controller
     /**
     * @OA\Delete(
     *      path="/api/users/{id}",
-    *      operationId="delete",
+    *      operationId="users.delete",
     *      security={{"bearer_token":{}}},
     *      summary="Delete a specific user on system when authenticated needs do it",
     *      tags={"users"},
@@ -1305,7 +1023,7 @@ class UserController extends Controller
         /**
     * @OA\Delete(
     *      path="/api/users/own",
-    *      operationId="deleteOwn",
+    *      operationId="users.deleteOwn",
     *      security={{"bearer_token":{}}},
     *      summary="Delete the authenticated user on system",
     *      tags={"users"},
@@ -1385,5 +1103,170 @@ class UserController extends Controller
             $this->saveLog();
             return $returnMessage;
         }
+    }
+
+    private function filteredResults(Request $request) : Builder
+    {
+        // Declare your fixed params here
+        $defaultKeys = [
+            'limit',
+            'page',
+            'business'
+        ];
+
+        $columnsToSearch = [];
+        $columnsToOrder = [];
+        $columnsOperationSearch = [
+            'EQUALS' => [
+                'id',
+                'status',
+                'management'
+            ],
+            'LIKE' => [
+                'email',
+                'fullname',
+                'phone',
+                'role',
+            ],
+            'BETWEEN' => [
+                'created_at',
+                'updated_at',
+                'email_verified_at',
+            ],
+        ];
+
+        $validator = Validator::make(array_merge(
+            $request->route()->parameters(),
+            $request->all()
+        ) , [
+            'limit' => 'sometimes|numeric|min:20|max:100',
+            'page' => 'sometimes|numeric|min:1',
+            'business' => 'sometimes|string|exists:businesses,id',
+            // 'dbColumnName-order' => 'asc|desc'
+            // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
+            '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
+                if (!in_array($attribute, $defaultKeys))
+                {
+                    foreach (['-order', '-search'] as $suffix)
+                    {
+                        if (substr($attribute, -strlen($suffix)) === $suffix)
+                        {
+                            $columnName = str_replace($suffix, '', $attribute);
+                            $operationType = substr($suffix, 1);
+
+                            if (!Schema::hasColumn('users', $columnName))
+                            {
+                                $fail('[validation.column]');
+                            }
+
+                            switch ($operationType)
+                            {
+                                case 'order':
+                                    if (!in_array($value, ['asc', 'desc']))
+                                    {
+                                        $fail('[validation.order]');
+                                    }
+                                    else
+                                    {
+                                        $columnsToOrder[$columnName] = $value;
+                                    }
+                                    break;
+                                case 'search':
+                                    if (in_array($columnName, $columnsOperationSearch['EQUALS']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'EQUALS';
+                                    }
+                                    else if (in_array($columnName, $columnsOperationSearch['LIKE']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'LIKE';
+                                    }
+                                    else if (in_array($columnName, $columnsOperationSearch['BETWEEN']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'BETWEEN';
+                                    }
+                                    else
+                                    {
+                                        $fail('[validation.search-operation-not-found');
+                                    }
+                                    $columnsToSearch[$columnName]['values'] = explode('|', $value);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            },
+        ]);
+
+        if($validator->fails())
+        {
+            throw new ValidationException($validator);
+        }
+
+        $business = ($request->has('business') ? $request->only('business')[0] : null);
+
+        $query = User::query();
+
+        $query->select([
+            'users.email as email',
+            'users.fullname as fullname',
+            'users.phone as phone',
+            'users.status as status',
+            'users.email_verified_at as email_verified_at',
+            'roles.name as role',
+            'users.created_at as created_at',
+            'users.updated_at as updated_at',
+        ]);
+
+        if (!empty($columnsToOrder))
+        {
+            foreach ($columnsToOrder as $column => $direction)
+            {
+                $query->orderBy($column, $direction);
+            }
+        }
+        else
+        {
+            $query->orderBy('email', 'asc');
+        }
+
+        $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
+        $query->leftJoin('roles', 'roles.id', '=', 'user_roles.role');
+        $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
+
+        foreach ($columnsToSearch as $column => $whereInfo)
+        {
+            if ($whereInfo['operation'] == 'BETWEEN')
+            {
+                if (count($whereInfo['values']) == 1)
+                {
+                    $query->whereBetween($column, [$whereInfo['values'][0], $whereInfo['values'][0]]);
+                }
+                else if (count($whereInfo['values']) % 2 == 0)
+                {
+                    for ($i = 0; $i < count($whereInfo['values']); $i + 2)
+                    {
+                        $query->whereBetween($column, [$whereInfo['values'][$i], $whereInfo['values'][($i + 1)]]);
+                    }
+                }
+            }
+            else if ($whereInfo['operation'] == 'LIKE')
+            {
+                foreach ($whereInfo['values'] as $value)
+                {
+                    $query->where($column, 'LIKE', '%'.$value.'%');
+                }
+            }
+            else if ($whereInfo['operation'] == 'EQUALS')
+            {
+                foreach ($whereInfo['values'] as $value)
+                {
+                    $query->where($column, '=', $value);
+                }
+            }
+        }
+
+        return $query;
     }
 }
