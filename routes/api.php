@@ -86,6 +86,9 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'questions'
 ], function ($router) {
+    // Other operations
+    Route::get('/export', [QuestionController::class, 'export'])->middleware('auth:api')->name('questions.export');
+
     // Basic CRUD
     Route::post('/', [QuestionController::class, 'store'])->middleware('auth:api')->name('questions.store');
     Route::get('/', [QuestionController::class, 'index'])->middleware('auth:api')->name('questions.index');
@@ -98,16 +101,16 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'roles'
 ], function ($router) {
+    // Other operations
+    Route::get('/available', [RoleController::class, 'showAvailable'])->middleware('auth:api')->name('roles.show.available');
+    Route::get('/export', [RoleController::class, 'export'])->middleware('auth:api')->name('roles.export');
+
     // Basic CRUD
     Route::post('/', [RoleController::class, 'store'])->middleware('auth:api')->name('roles.store');
     Route::get('/', [RoleController::class, 'index'])->middleware('auth:api')->name('roles.index');
     Route::get('/{id}', [RoleController::class, 'show'])->middleware('auth:api')->name('roles.show');
     Route::put('/{id}', [RoleController::class, 'update'])->middleware('auth:api')->name('roles.update');
     Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware('auth:api')->name('roles.destroy');
-
-    // Other operations
-    Route::get('/available', [RoleController::class, 'showAvailable'])->middleware('auth:api')->name('roles.show.available');
-
 });
 
 Route::group([

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\DeleteExportedFile;
 use App\Models\Attachment as AttachmentModel;
 use App\Models\Maintenance;
 use App\Trait\Log;
 use App\Trait\Attachment;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -21,6 +23,51 @@ class MaintenanceController extends Controller
 {
     use Log, Attachment;
 
+    /**
+    * @OA\Get(
+    *      path="/api/maintenances/",
+    *      operationId="maintenances.index",
+    *      security={{"bearer_token":{}}},
+    *      description="On this route, we can set '*-order' with 'asc' or 'desc'
+    *          and '*-search' with any word, in '*', we can too set specifics DB column to
+    *          compare between dates in '*-search' we need set a pipe separing the
+    *          values, like 'date1|date2', pipe can be used to set more search
+    *          words too, but remember, they will compare using 'AND' in 'WHERE'
+    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+    *      tags={"maintenances"},
+    *      summary="Show maintenances on system",
+    *      @OA\Parameter(
+    *          description="Business's ID, if used a user with management role, don't set it",
+    *          in="query",
+    *          name="business",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Building's ID",
+    *          in="query",
+    *          name="building",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Show maintenances available on maintenance",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function index()
     {
         $returnMessage = null;
@@ -30,104 +77,14 @@ class MaintenanceController extends Controller
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('maintenance', 'read', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('maintenance', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            // Declare your fixed params here
-            $defaultKeys = [
-                'limit',
-                'page',
-                'business',
-                'building',
-            ];
-
-            $validator = Validator::make(array_merge(
-                request()->route()->parameters(),
-                request()->all()
-            ) , [
-                'limit' => 'sometimes|numeric|min:20|max:100',
-                'page' => 'sometimes|numeric|min:1',
-                'business' => 'sometimes|string|exists:businesses,id',
-                'building' => 'sometimes|string|exists:buildings,id',
-                // 'dbColumnName' => 'asc|desc'
-                '*' => function ($attribute, $value, $fail) use ($defaultKeys) {
-                    if (!in_array($attribute, $defaultKeys))
-                    {
-                        if (!in_array($value, ['asc', 'desc']))
-                        {
-                            $fail('[validation.order]');
-                        }
-
-                        if (!Schema::hasColumn('maintenances', $attribute))
-                        {
-                            $fail('[validation.column]');
-                        }
-                    }
-                },
-            ]);
-
-            if($validator->fails())
-            {
-                throw new ValidationException($validator);
-            }
-
             $limit = (request()->has('limit') ? request()->limit : 20);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
-            $business = request()->route()->parameter('business');
-            $building = request()->route()->parameter('building');
-
-            $sort = array_filter(request()->all(), function($key) use ($defaultKeys) {
-                return !in_array($key, $defaultKeys);
-            }, ARRAY_FILTER_USE_KEY);
-
-            $query = Maintenance::query();
-
-            $query->select([
-                'maintenances.name as name',
-                'maintenances.description as description',
-                'maintenances.start_date as start_date',
-                'maintenances.end_date as end_date',
-                'maintenances.is_completed as is_completed',
-                'maintenances.is_approved as is_approved',
-                'buildings.name as building',
-                'maintenances.email as email',
-                'maintenances.site as site',
-                'maintenances.status as status',
-                'users.fullname as user',
-                'businesses.name as business',
-                'maintenances.created_at as created_at',
-                'maintenances.updated_at as updated_at',
-            ]);
-
-            if (!empty($sort))
-            {
-                foreach ($sort as $column => $direction)
-                {
-                    $query->orderBy($column, $direction);
-                }
-            }
-            else
-            {
-                $query->orderBy('name', 'desc');
-            }
-
-            $query->leftJoin('buildings', 'buildings.id', '=', 'maintenances.building');
-            $query->leftJoin('businesses', 'businesses.id', '=', 'buildings.business');
-            $query->leftJoin('users', 'users.id', '=', 'maintenances.user');
-
-            if(!empty($business))
-            {
-                $query->where('businesses.id', '=', $business);
-            }
-
-            if(!empty($building))
-            {
-                $query->where('buildings.id', '=', $building);
-            }
-
-            $maintenances = $query->paginate($limit, ['*'], 'page', $page);
+            $maintenances = $this->filteredResults(request())->paginate($limit, ['*'], 'page', $page);
 
             $this->setAfter(json_encode(['message' => 'Showing maintenances available']));
             $returnMessage =  response()->json(['message' => 'Showing maintenances available', 'data' => $maintenances]);
@@ -154,6 +111,197 @@ class MaintenanceController extends Controller
         }
     }
 
+    /**
+    * @OA\Get(
+    *      path="/api/maintenances/export",
+    *      operationId="maintenances.export",
+    *      security={{"bearer_token":{}}},
+    *      description="On this route, we can set '*-order' with 'asc' or 'desc'
+    *          and '*-search' with any word, in '*', we can too set specifics DB column to
+    *          compare between dates in '*-search' we need set a pipe separing the
+    *          values, like 'date1|date2', pipe can be used to set more search
+    *          words too, but remember, they will compare using 'AND' in 'WHERE'
+    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+    *      tags={"maintenances"},
+    *      summary="Export maintenances on system to a file",
+    *      @OA\Parameter(
+    *          description="Business's ID, if used a user with management role, don't set it",
+    *          in="query",
+    *          name="business",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Building's ID",
+    *          in="query",
+    *          name="building",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Return a link to download exported file",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
+    public function export()
+    {
+        $returnMessage = null;
+        $this->initLog(request());
+
+        try
+        {
+            if (!$this->checkUserPermission('building', 'read', (request()->has('business') ? request()->business : null)))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $this->setBefore(json_encode(request()->all()));
+
+            $buildings = $this->filteredResults(request())->get();
+
+            $path = implode(DIRECTORY_SEPARATOR, ['export']);
+
+            if(!File::isDirectory(Storage::disk('public')->path($path)))
+            {
+                File::makeDirectory(Storage::disk('public')->path($path), 0755, true, true);
+            }
+
+            $filePath = implode(DIRECTORY_SEPARATOR, ['export', 'buildings_'.Ulid::generate().'.csv']);
+            $file = fopen(Storage::disk('public')->path($filePath), 'w');
+
+            // Add CSV headers
+            fputcsv($file, [
+                'Nome',
+                'Descrição',
+                'Data de início',
+                'Data de finalização',
+                'Manutenção realizada',
+                'Manutenção aprovada',
+                'Prédio',
+                'Email',
+                'Site',
+                'Status',
+                'Proprietário',
+                'Negócio',
+                'Manutenção criado em',
+                'Manutenção atualizado em',
+            ]);
+
+            foreach ($buildings as $building)
+            {
+                fputcsv($file, [
+                    $building->name,
+                    $building->description,
+                    $building->start_date,
+                    $building->end_date,
+                    $building->is_completed,
+                    $building->is_approved,
+                    $building->building,
+                    $building->email,
+                    $building->site,
+                    $building->status,
+                    $building->user,
+                    $building->business,
+                    $building->created_at,
+                    $building->updated_at
+                ]);
+            }
+
+            fclose($file);
+
+            $timeToExclude = now()->addHours(24);
+
+            DeleteExportedFile::dispatch(Storage::disk('public')->path($filePath))->delay($timeToExclude);
+
+            $this->setAfter(json_encode(['message' => 'Download link available to get maintenances in CSV file']));
+            $returnMessage =  response()->json([
+                'message' => 'Download link available to get maintenances in CSV file',
+                'data' => [
+                    'url' => Storage::disk('public')->url(str_replace(DIRECTORY_SEPARATOR, '/', $filePath)),
+                    'available_until' => $timeToExclude,
+                ]
+            ]);
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (ValidationException $ex)
+        {
+            $this->setAfter(json_encode($ex->errors()));
+            $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
+    }
+
+    /**
+    * @OA\Get(
+    *      path="/api/maintenances/{id}",
+    *      operationId="maintenances.show",
+    *      security={{"bearer_token":{}}},
+    *      description="<b>Important:</b><br>
+    *          Business's ID need to be setted if user authenticated:<br>
+    *          1 - Don't have a management role with permission 'maintenance > read' enabled or;<br>
+    *          2 - Have a role with permission 'maintenance > read' enabled in a specific business;<br>
+    *          On first case, we can see all maintenances, but in second case we can only see info of maintenances how
+    *          is attached on all business.",
+    *      tags={"maintenances"},
+    *      summary="Show a specific maintenance info",
+    *      @OA\Parameter(
+    *          description="Business's ID",
+    *          in="query",
+    *          name="business",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Maintenance's ID",
+    *          in="path",
+    *          name="id",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Show maintenance info",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function show()
     {
         $returnMessage = null;
@@ -491,5 +639,159 @@ class MaintenanceController extends Controller
             $this->saveLog();
             return $returnMessage;
         }
+    }
+
+    private function filteredResults(Request $request) : Builder
+    {
+        // Declare your fixed params here
+        $defaultKeys = [
+            'limit',
+            'page',
+            'business',
+            'building',
+        ];
+
+        $columnsToSearch = [];
+        $columnsToOrder = [];
+        $columnsOperationSearch = [
+            'EQUALS' => [
+                'id',
+                'status',
+                'is_completed',
+                'is_approved',
+            ],
+            'LIKE' => [
+                'name',
+                'description',
+                'building',
+                'email',
+                'site',
+                'user',
+                'business',
+            ],
+            'BETWEEN' => [
+                'start_date',
+                'end_date',
+                'created_at',
+                'updated_at',
+            ],
+        ];
+
+        $validator = Validator::make(array_merge(
+            $request->route()->parameters(),
+            $request->all()
+        ) , [
+            'limit' => 'sometimes|numeric|min:20|max:100',
+            'page' => 'sometimes|numeric|min:1',
+            'business' => 'sometimes|string|exists:businesses,id',
+            'building' => 'required|string|exists:buildings,id',
+            // 'dbColumnName-order' => 'asc|desc'
+            // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
+            '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
+                if (!in_array($attribute, $defaultKeys))
+                {
+                    foreach (['-order', '-search'] as $suffix)
+                    {
+                        if (substr($attribute, -strlen($suffix)) === $suffix)
+                        {
+                            $columnName = str_replace($suffix, '', $attribute);
+                            $operationType = substr($suffix, 1);
+
+                            if (!Schema::hasColumn('maintenances', $columnName))
+                            {
+                                $fail('[validation.column]');
+                            }
+
+                            switch ($operationType)
+                            {
+                                case 'order':
+                                    if (!in_array($value, ['asc', 'desc']))
+                                    {
+                                        $fail('[validation.order]');
+                                    }
+                                    else
+                                    {
+                                        $columnsToOrder[$columnName] = $value;
+                                    }
+                                    break;
+                                case 'search':
+                                    if (in_array($columnName, $columnsOperationSearch['EQUALS']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'EQUALS';
+                                    }
+                                    else if (in_array($columnName, $columnsOperationSearch['LIKE']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'LIKE';
+                                    }
+                                    else if (in_array($columnName, $columnsOperationSearch['BETWEEN']))
+                                    {
+                                        $columnsToSearch[$columnName]['operation'] = 'BETWEEN';
+                                    }
+                                    else
+                                    {
+                                        $fail('[validation.search-operation-not-found');
+                                    }
+                                    $columnsToSearch[$columnName]['values'] = explode('|', $value);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            },
+        ]);
+
+        if($validator->fails())
+        {
+            throw new ValidationException($validator);
+        }
+
+        $business = ($request->has('business') ? $request->business : null);
+        $building = $request->building;
+
+        $query = Maintenance::query();
+
+        $query->select([
+            'maintenances.name as name',
+            'maintenances.description as description',
+            'maintenances.start_date as start_date',
+            'maintenances.end_date as end_date',
+            'maintenances.is_completed as is_completed',
+            'maintenances.is_approved as is_approved',
+            'buildings.name as building',
+            'maintenances.email as email',
+            'maintenances.site as site',
+            'maintenances.status as status',
+            'users.fullname as user',
+            'businesses.name as business',
+            'maintenances.created_at as created_at',
+            'maintenances.updated_at as updated_at',
+        ]);
+
+        if (!empty($columnsToOrder))
+        {
+            foreach ($columnsToOrder as $column => $direction)
+            {
+                $query->orderBy($column, $direction);
+            }
+        }
+        else
+        {
+            $query->orderBy('name', 'desc');
+        }
+
+        $query->leftJoin('buildings', 'buildings.id', '=', 'maintenances.building');
+        $query->leftJoin('businesses', 'businesses.id', '=', 'buildings.business');
+        $query->leftJoin('users', 'users.id', '=', 'maintenances.user');
+
+        if(!empty($business))
+        {
+            $query->where('businesses.id', '=', $business);
+        }
+
+        $query->where('buildings.id', '=', $building);
+
+        return $query;
     }
 }

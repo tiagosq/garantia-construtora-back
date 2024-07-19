@@ -257,6 +257,153 @@
                 }
             }
         },
+        "/api/maintenances/": {
+            "get": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Show maintenances on system",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "maintenances.index",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID, if used a user with management role, don't set it",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "building",
+                        "in": "query",
+                        "description": "Building's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show maintenances available on maintenance"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenances/export": {
+            "get": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Export maintenances on system to a file",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "maintenances.export",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID, if used a user with management role, don't set it",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "building",
+                        "in": "query",
+                        "description": "Building's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return a link to download exported file"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenances/{id}": {
+            "get": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Show a specific maintenance info",
+                "description": "<b>Important:</b><br>\n    *          Business's ID need to be setted if user authenticated:<br>\n    *          1 - Don't have a management role with permission 'maintenance > read' enabled or;<br>\n    *          2 - Have a role with permission 'maintenance > read' enabled in a specific business;<br>\n    *          On first case, we can see all maintenances, but in second case we can only see info of maintenances how\n    *          is attached on all business.",
+                "operationId": "maintenances.show",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show maintenance info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
         "/api/questions/": {
             "get": {
                 "tags": [
@@ -1500,6 +1647,10 @@
         {
             "name": "auth",
             "description": "auth"
+        },
+        {
+            "name": "maintenances",
+            "description": "maintenances"
         },
         {
             "name": "questions",

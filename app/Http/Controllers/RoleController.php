@@ -69,7 +69,7 @@ class RoleController extends Controller {
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('user', 'read', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -144,7 +144,7 @@ class RoleController extends Controller {
 
         try
         {
-            if (!$this->checkUserPermission('user', 'read', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('role', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }

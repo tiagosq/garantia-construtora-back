@@ -68,7 +68,7 @@ class UserController extends Controller
 
         try
         {
-            if (!$this->checkUserPermission('user', 'read', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('user', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -76,8 +76,8 @@ class UserController extends Controller
             $this->setBefore(json_encode(request()->all()));
 
             $query = $this->filteredResults(request());
-            $limit = (request()->has('limit') ? request()->only('limit')[0] : 20);
-            $page = (request()->has('page') ? (request()->only('page')[0] - 1) : 0);
+            $limit = (request()->has('limit') ? request()->limit : 20);
+            $page = (request()->has('page') ? (request()->page - 1) : 0);
             $users = $query->paginate($limit, ['*'], 'page', $page);
 
             $this->setAfter(json_encode(['message' => 'Showing users available']));
@@ -150,7 +150,7 @@ class UserController extends Controller
 
         try
         {
-            if (!$this->checkUserPermission('user', 'read', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('user', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -549,7 +549,7 @@ class UserController extends Controller
                 throw new ValidationException($validator);
             }
 
-            if (!User::roleCanBeAssociatedToUser(request()->role, (empty(request()->business) ? null : request()->business)))
+            if (!User::roleCanBeAssociatedToUser(request()->role, (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('User don\'t have permission to associate this role to another user');
             }
@@ -1204,7 +1204,7 @@ class UserController extends Controller
             throw new ValidationException($validator);
         }
 
-        $business = ($request->has('business') ? $request->only('business')[0] : null);
+        $business = ($request->has('business') ? $request->business : null);
 
         $query = User::query();
 

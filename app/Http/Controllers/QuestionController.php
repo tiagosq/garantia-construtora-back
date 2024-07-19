@@ -7,7 +7,6 @@ use App\Models\Question;
 use App\Models\Attachment as AttachmentModel;
 use App\Trait\Attachment;
 use App\Trait\Log;
-use Directory;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -79,14 +78,14 @@ class QuestionController extends Controller
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
             $query = $this->filteredResults(request());
-            $limit = (request()->has('limit') ? request()->only('limit')[0] : 20);
-            $page = (request()->has('page') ? (request()->only('page')[0] - 1) : 0);
+            $limit = (request()->has('limit') ? request()->limit : 20);
+            $page = (request()->has('page') ? (request()->page - 1) : 0);
             $questions = $query->paginate($limit, ['*'], 'page', $page);
 
             $this->setAfter(json_encode(['message' => 'Showing questions available']));
@@ -166,7 +165,7 @@ class QuestionController extends Controller
 
         try
         {
-            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -193,8 +192,8 @@ class QuestionController extends Controller
                 'Manutenção',
                 'Prédio',
                 'Negócio',
-                'Regra criado em',
-                'Regra atualizado em',
+                'Questão criado em',
+                'Questão atualizado em',
             ]);
 
             foreach ($questions as $question)
@@ -302,7 +301,7 @@ class QuestionController extends Controller
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -454,8 +453,8 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'create', (request()->has('business') ? request()->only('business') : null)) ||
-                request()->has('attachments') && !$this->checkUserPermission('attachment', 'create', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'create', (request()->has('business') ? request()->business : null)) ||
+                request()->has('attachments') && !$this->checkUserPermission('attachment', 'create', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -689,12 +688,12 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'update', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'update', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            if ((request()->has('attachments_to_add') || request()->has('attachments_to_remove')) && !$this->checkUserPermission('attachment', 'update', (request()->has('business') ? request()->only('business') : null)))
+            if ((request()->has('attachments_to_add') || request()->has('attachments_to_remove')) && !$this->checkUserPermission('attachment', 'update', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -895,7 +894,7 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'delete', (request()->has('business') ? request()->only('business') : null)))
+            if (!$this->checkUserPermission('question', 'delete', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
