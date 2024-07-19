@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -34,6 +35,35 @@ class User extends Authenticatable implements JWTSubject
         'password' => 'hashed',
     ];
 
+    public static function roleCanBeAssociatedToUser(string $role, string $business = null) : bool
+    {
+        if (!auth()->user())
+        {
+            return false;
+        }
+
+        $userRoleWhereParams = [
+            ['user', '=', auth()->user()->id],
+            ['business', '=', $business]
+        ];
+
+        $userRole = UserRole::where($userRoleWhereParams)->first();
+
+        if (empty($userRole))
+        {
+            return ($business != null ? User::roleCanBeAssociatedToUser($role) : false);
+        }
+
+        $roleUsed = Role::find($userRole->role);
+        $associatedRole = Role::find($role);
+        $roleResult = (!empty($role) && !empty($associatedRole) && $roleUsed->order <= $associatedRole->order);
+
+        // If result is false, check if user has a management role
+        $roleResult = ((!$roleResult && $business != null) ? User::roleCanBeAssociatedToUser($role) : $roleResult);
+
+        return $roleResult;
+    }
+
     /**
      * Get the identifier that will be stored in the subject claim of the JWT.
      *
@@ -55,12 +85,12 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
-     * Get the managementRole associated with the User
+     * Get all of the userRoles for the User
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function managementRole(): HasOne
+    public function userRoles(): HasMany
     {
-        return $this->hasOne(UserRole::class);
+        return $this->hasMany(UserRole::class, 'user', 'id');
     }
 }

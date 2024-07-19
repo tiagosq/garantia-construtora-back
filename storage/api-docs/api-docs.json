@@ -1,0 +1,732 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Garantia Construtora",
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User registration route",
+                "operationId": "register",
+                "parameters": [
+                    {
+                        "name": "fullname",
+                        "in": "query",
+                        "description": "User's full name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "User's email (Need be unique in system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "User's phone (Need be unique in system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Password",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "ID of an existing role to be allocated in that user",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "ID of an existing business (don't set if user is a system management)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "User Created"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User log in route",
+                "operationId": "login",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "User's email (Need be unique in system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "Password",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User logged in"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User log out route",
+                "operationId": "auth.logout",
+                "responses": {
+                    "200": {
+                        "description": "User logged out"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token of user before timeouted",
+                "operationId": "auth.refresh",
+                "responses": {
+                    "200": {
+                        "description": "New token response to use"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/forget-password": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Request a password reset authorization",
+                "operationId": "auth.forget-password",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "User's email",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Send a mail to user"
+                    },
+                    "400": {
+                        "description": "Validation problems"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                }
+            }
+        },
+        "/api/auth/reset-password": {
+            "post": {
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset user's password if they set the correct token (sended on ther mail)",
+                "operationId": "auth.reset-password",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "description": "Token received via user's mail",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "New user password",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User's password reseted"
+                    },
+                    "400": {
+                        "description": "Validation problems"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                }
+            }
+        },
+        "/api/users/": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Show users registration on system",
+                "description": "On this route, we can set *-order with 'asc' or 'desc'\n    *          and *-search with any word, in * we can set any DB column and to\n    *          compare between dates in *-search we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "index",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show users available on business if setted or management users if business isn't setted"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/users/export": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Export users registration on system to a file",
+                "description": "On this route, we can set *-order with 'asc' or 'desc'\n    *          and *-search with any word, in * we can set any DB column and to\n    *          compare between dates in *-search we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "export",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return a link to download exported file"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{id}": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Show a specific user info",
+                "description": "<b>Important:</b><br>\n    *          Business's ID need to be setted if user authenticated:<br>\n    *          1 - Don't have a management role with permission 'user > read' enabled or;<br>\n    *          2 - Have a role with permission 'user > read' enabled in a specific business;<br>\n    *          On first case, we can see any user, but in second case we can only see info of users how\n    *          is attached on that business.",
+                "operationId": "show",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show user info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update informations of a specific user on system when authenticated needs do it",
+                "operationId": "update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User's ID to be updated",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "fullname",
+                        "in": "query",
+                        "description": "New user's full name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New user's email (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New user's phone (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "New user's password (unhashed, will be realized on save at database)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "New user's role ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "New user's business ID (don't set if you use a management role)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show updated user's info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete a specific user on system when authenticated needs do it",
+                "operationId": "delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User's ID to be deleted",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User removed on system"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/users/own": {
+            "get": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Show user authenticated info",
+                "operationId": "showOwn",
+                "responses": {
+                    "200": {
+                        "description": "Show user info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Update informations of authenticated user on system",
+                "operationId": "updateOwn",
+                "parameters": [
+                    {
+                        "name": "fullname",
+                        "in": "query",
+                        "description": "New user's full name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New user's email (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New user's phone (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "New user's password (unhashed, will be realized on save at database)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show updated user's info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Delete the authenticated user on system",
+                "operationId": "deleteOwn",
+                "responses": {
+                    "200": {
+                        "description": "User removed on system"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/users": {
+            "post": {
+                "tags": [
+                    "users"
+                ],
+                "summary": "Register a new user on system when authenticated needs do it",
+                "operationId": "store",
+                "parameters": [
+                    {
+                        "name": "fullname",
+                        "in": "query",
+                        "description": "New user's full name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New user's email (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New user's phone (unique on system)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "description": "New user's password (unhashed, will be realized on save at database)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "description": "New user's role ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "New user's business ID (don't set if you use a management role)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show user created info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "auth",
+            "description": "auth"
+        },
+        {
+            "name": "users",
+            "description": "users"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearer_token": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    }
+}

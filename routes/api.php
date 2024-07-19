@@ -113,17 +113,18 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'users'
 ], function ($router) {
+    // Other operations
+    Route::get('/own', [UserController::class, 'showOwn'])->middleware('auth:api')->name('users.show.own');
+    Route::put('/own', [UserController::class, 'updateOwn'])->middleware('auth:api')->name('users.update.own');
+    Route::delete('/own', [UserController::class, 'destroyOwn'])->middleware('auth:api')->name('users.destroy.own');
+    Route::get('/export', [UserController::class, 'export'])->middleware('auth:api')->name('users.export');
+
     // Basic CRUD
     Route::post('/', [UserController::class, 'store'])->middleware('auth:api')->name('users.store');
     Route::get('/', [UserController::class, 'index'])->middleware('auth:api')->name('users.index');
     Route::get('/{id}', [UserController::class, 'show'])->middleware('auth:api')->name('users.show');
     Route::put('/{id}', [UserController::class, 'update'])->middleware('auth:api')->name('users.update');
     Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('auth:api')->name('users.destroy');
-
-    // Other operations
-    Route::get('/{id}', [UserController::class, 'showOwn'])->middleware('auth:api')->name('users.show.own');
-    Route::put('/{id}', [UserController::class, 'updateOwn'])->middleware('auth:api')->name('users.update.own');
-    Route::delete('/{id}', [UserController::class, 'destroyOwn'])->middleware('auth:api')->name('users.destroy.own');
 });
 
 Route::fallback(function(){

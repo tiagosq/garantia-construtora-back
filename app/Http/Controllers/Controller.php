@@ -6,6 +6,12 @@ use App\Models\Log;
 use App\Models\Role;
 use App\Models\UserRole;
 
+/**
+* @OA\Info(
+*     version="1.0",
+*     title="Garantia Construtora"
+* )
+*/
 abstract class Controller
 {
     public function checkUserPermission(string $category, string $crud, string $business = null) : bool

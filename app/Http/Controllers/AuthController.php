@@ -25,6 +25,72 @@ class AuthController extends Controller
 {
     use Log;
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/register",
+    *      operationId="register",
+    *      tags={"auth"},
+    *      summary="User registration route",
+    *      @OA\Parameter(
+    *          description="User's full name",
+    *          in="query",
+    *          name="fullname",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="User's email (Need be unique in system)",
+    *          in="query",
+    *          name="email",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="User's phone (Need be unique in system)",
+    *          in="query",
+    *          name="phone",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Password",
+    *          in="query",
+    *          name="password",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="ID of an existing role to be allocated in that user",
+    *          in="query",
+    *          name="role",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="ID of an existing business (don't set if user is a system management)",
+    *          in="query",
+    *          name="business",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=201,
+    *          description="User Created",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function register() {
         $this->initLog(request());
         $returnMessage = null;
@@ -55,7 +121,7 @@ class AuthController extends Controller
                 throw new ValidationException($validator);
             }
 
-            if (!$this->roleCanBeAssociatedToUser(request()->role, (empty(request()->business) ? null : request()->business)))
+            if (!User::roleCanBeAssociatedToUser(request()->role, (empty(request()->business) ? null : request()->business)))
             {
                 throw new UnauthorizedException('User don\'t have permission to associate this role to another user');
             }
@@ -110,6 +176,44 @@ class AuthController extends Controller
         }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/login",
+    *      operationId="login",
+    *      tags={"auth"},
+    *      summary="User log in route",
+    *      @OA\Parameter(
+    *          description="User's email (Need be unique in system)",
+    *          in="query",
+    *          name="email",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Password",
+    *          in="query",
+    *          name="password",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="User logged in",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function login()
     {
         $this->initLog(request());
@@ -147,6 +251,27 @@ class AuthController extends Controller
         }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/logout",
+    *      operationId="auth.logout",
+    *      tags={"auth"},
+    *      summary="User log out route",
+    *      security={{"bearer_token":{}}},
+    *      @OA\Response(
+    *          response=200,
+    *          description="User logged out",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized",
+    *      ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *   )
+    */
     public function logout()
     {
         $this->initLog(request());
@@ -182,11 +307,86 @@ class AuthController extends Controller
         }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/refresh",
+    *      operationId="auth.refresh",
+    *      tags={"auth"},
+    *      summary="Refresh token of user before timeouted",
+    *      security={{"bearer_token":{}}},
+    *      @OA\Response(
+    *          response=200,
+    *          description="New token response to use",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized",
+    *      ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *   )
+    */
     public function refresh()
     {
-        return $this->respondWithToken(auth()->refresh());
+        $this->initLog(request());
+        $returnMessage = null;
+
+        try
+        {
+            if (empty(auth()->user()))
+            {
+                throw new UnauthorizedException('Unauthorized');
+            }
+
+            $this->setAfter('Token Refreshed');
+            $returnMessage = $this->respondWithToken(auth()->refresh());
+        }
+        catch (UnauthorizedException $ex)
+        {
+            $this->setAfter(json_encode($ex->getMessage()));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 401);
+        }
+        catch (Exception $ex)
+        {
+            $this->setAfter($ex->getMessage());
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 500);
+        }
+        finally
+        {
+            $this->saveLog();
+            return $returnMessage;
+        }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/forget-password",
+    *      operationId="auth.forget-password",
+    *      tags={"auth"},
+    *      summary="Request a password reset authorization",
+    *      @OA\Parameter(
+    *          description="User's email",
+    *          in="query",
+    *          name="email",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Send a mail to user",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation problems",
+    *      ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *   )
+    */
     public function forgetPassword()
     {
         $this->initLog(request());
@@ -237,6 +437,40 @@ class AuthController extends Controller
         }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/auth/reset-password",
+    *      operationId="auth.reset-password",
+    *      tags={"auth"},
+    *      summary="Reset user's password if they set the correct token (sended on ther mail)",
+    *      @OA\Parameter(
+    *          description="Token received via user's mail",
+    *          in="query",
+    *          name="token",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New user password",
+    *          in="query",
+    *          name="password",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="User's password reseted",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation problems",
+    *      ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      )
+    *   )
+    */
     public function resetPassword()
     {
         $this->initLog(request());
@@ -301,34 +535,5 @@ class AuthController extends Controller
                 'expires_in' => auth()->factory()->getTTL() * 60
             ]
         ]);
-    }
-
-    protected function roleCanBeAssociatedToUser(string $role, string $business = null) : bool
-    {
-        if (!auth()->user())
-        {
-            return false;
-        }
-
-        $userRoleWhereParams = [
-            ['user', '=', auth()->user()->id],
-            ['business', '=', $business]
-        ];
-
-        $userRole = UserRole::where($userRoleWhereParams)->first();
-
-        if (empty($userRole))
-        {
-            return ($business != null ? $this->roleCanBeAssociatedToUser($role) : false);
-        }
-
-        $roleUsed = Role::find($userRole->role);
-        $associatedRole = Role::find($role);
-        $roleResult = (!empty($role) && !empty($associatedRole) && $roleUsed->order <= $associatedRole->order);
-
-        // If result is false, check if user has a management role
-        $roleResult = ((!$roleResult && $business != null) ? $this->roleCanBeAssociatedToUser($role) : $roleResult);
-
-        return $roleResult;
     }
 }
