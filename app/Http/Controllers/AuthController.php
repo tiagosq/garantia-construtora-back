@@ -457,6 +457,13 @@ class AuthController extends Controller
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
+    *      @OA\Parameter(
+    *          description="New user password confirmation",
+    *          in="query",
+    *          name="password_confirmation",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="User's password reseted",
@@ -488,14 +495,13 @@ class AuthController extends Controller
                 throw new ValidationException($validator);
             }
 
-            $passwordResetToken = PasswordResetTokenModel::where('token', request()->token)->whereDate('created_at', '>=', Date::now()->subHour()->toDateTimeString())->first();
-
+            $passwordResetToken = PasswordResetTokenModel::where('token', '=' , request()->token)->whereDate('created_at', '>=', Date::now()->subHour())->first();
 
             if (!empty($passwordResetToken))
             {
                 $user = User::whereEmail($passwordResetToken->email)->first();
 
-                if ($user->update(['password' => request()->password]))
+                if ($user->update(['password' => Hash::make(request()->password)]))
                 {
                     PasswordResetTokenModel::where('email', $user->email)->delete();
                     Mail::to($user)->send(new PasswordReseted($user));
