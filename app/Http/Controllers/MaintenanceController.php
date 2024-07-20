@@ -50,6 +50,20 @@ class MaintenanceController extends Controller
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Show maintenances available on maintenance",
@@ -138,6 +152,20 @@ class MaintenanceController extends Controller
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Return a link to download exported file",
@@ -163,14 +191,14 @@ class MaintenanceController extends Controller
 
         try
         {
-            if (!$this->checkUserPermission('building', 'read', (request()->has('business') ? request()->business : null)))
+            if (!$this->checkUserPermission('maintenance', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
 
             $this->setBefore(json_encode(request()->all()));
 
-            $buildings = $this->filteredResults(request())->get();
+            $maintenances = $this->filteredResults(request())->get();
 
             $path = implode(DIRECTORY_SEPARATOR, ['export']);
 
@@ -179,7 +207,7 @@ class MaintenanceController extends Controller
                 File::makeDirectory(Storage::disk('public')->path($path), 0755, true, true);
             }
 
-            $filePath = implode(DIRECTORY_SEPARATOR, ['export', 'buildings_'.Ulid::generate().'.csv']);
+            $filePath = implode(DIRECTORY_SEPARATOR, ['export', 'maintenances_'.Ulid::generate().'.csv']);
             $file = fopen(Storage::disk('public')->path($filePath), 'w');
 
             // Add CSV headers
@@ -200,23 +228,23 @@ class MaintenanceController extends Controller
                 'Manutenção atualizado em',
             ]);
 
-            foreach ($buildings as $building)
+            foreach ($maintenances as $maintenance)
             {
                 fputcsv($file, [
-                    $building->name,
-                    $building->description,
-                    $building->start_date,
-                    $building->end_date,
-                    $building->is_completed,
-                    $building->is_approved,
-                    $building->building,
-                    $building->email,
-                    $building->site,
-                    $building->status,
-                    $building->user,
-                    $building->business,
-                    $building->created_at,
-                    $building->updated_at
+                    $maintenance->name,
+                    $maintenance->description,
+                    $maintenance->start_date,
+                    $maintenance->end_date,
+                    $maintenance->is_completed,
+                    $maintenance->is_approved,
+                    $maintenance->building,
+                    $maintenance->email,
+                    $maintenance->site,
+                    $maintenance->status,
+                    $maintenance->user,
+                    $maintenance->business,
+                    $maintenance->created_at,
+                    $maintenance->updated_at
                 ]);
             }
 
@@ -311,7 +339,7 @@ class MaintenanceController extends Controller
         {
             $this->setBefore(json_encode(request()->all()));
 
-            if (!$this->checkUserPermission('maintenance', 'read', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('maintenance', 'read', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -375,6 +403,87 @@ class MaintenanceController extends Controller
         }
     }
 
+    /**
+    * @OA\Post(
+    *      path="/api/maintenances",
+    *      operationId="maintenances.store",
+    *      security={{"bearer_token":{}}},
+    *      summary="Create a new maintenance on system",
+    *      tags={"maintenances"},
+    *      @OA\Parameter(
+    *          description="Business's ID (don't set if you want to create a management role)",
+    *          in="query",
+    *          name="business",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's name",
+    *          in="query",
+    *          name="name",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's description",
+    *          in="query",
+    *          name="description",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's start date",
+    *          in="query",
+    *          name="start_date",
+    *          required=true,
+    *          @OA\Schema(type="boolean"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's end date",
+    *          in="query",
+    *          name="end_date",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's completed status",
+    *          in="query",
+    *          name="is_completed",
+    *          required=false,
+    *          @OA\Schema(type="boolean"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's approved status",
+    *          in="query",
+    *          name="is_approved",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's building",
+    *          in="query",
+    *          name="building",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Show maintenance created info",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function store()
     {
         $returnMessage = null;
@@ -386,7 +495,7 @@ class MaintenanceController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('maintenance', 'create', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('maintenance', 'create', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -457,6 +566,94 @@ class MaintenanceController extends Controller
         }
     }
 
+    /**
+    * @OA\Put(
+    *      path="/api/maintenances/{id}",
+    *      operationId="maintenances.update",
+    *      security={{"bearer_token":{}}},
+    *      summary="Update a maintenance on system",
+    *      tags={"maintenances"},
+    *      @OA\Parameter(
+    *          description="Business's ID (don't set if you want to create a management role)",
+    *          in="query",
+    *          name="business",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Maintenance's ID",
+    *          in="path",
+    *          name="id",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's name",
+    *          in="query",
+    *          name="name",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's description",
+    *          in="query",
+    *          name="description",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's start date",
+    *          in="query",
+    *          name="start_date",
+    *          required=true,
+    *          @OA\Schema(type="boolean"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's end date",
+    *          in="query",
+    *          name="end_date",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's completed status",
+    *          in="query",
+    *          name="is_completed",
+    *          required=false,
+    *          @OA\Schema(type="boolean"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's approved status",
+    *          in="query",
+    *          name="is_approved",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New maintenance's building",
+    *          in="query",
+    *          name="building",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Show maintenance updated info",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function update()
     {
         $returnMessage = null;
@@ -468,7 +665,7 @@ class MaintenanceController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('maintenance', 'update', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('maintenance', 'update', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -548,6 +745,38 @@ class MaintenanceController extends Controller
         }
     }
 
+    /**
+    * @OA\Delete(
+    *      path="/api/maintenances/{id}",
+    *      operationId="maintenances.delete",
+    *      security={{"bearer_token":{}}},
+    *      summary="Delete a specific maintenance on system",
+    *      tags={"maintenances"},
+    *      @OA\Parameter(
+    *          description="Maintenance's ID to be deleted",
+    *          in="path",
+    *          name="id",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Response(
+    *          response=200,
+    *          description="Maintenance removed on system",
+    *       ),
+    *      @OA\Response(
+    *          response=400,
+    *          description="Validation failed",
+    *       ),
+    *      @OA\Response(
+    *          response=401,
+    *          description="Unauthorized (User don't have permission, access token expired or isn't logged yet)",
+    *       ),
+    *      @OA\Response(
+    *          response=500,
+    *          description="API internal error",
+    *      ),
+    *     )
+    */
     public function destroy()
     {
         $returnMessage = null;
@@ -559,7 +788,7 @@ class MaintenanceController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('maintenance', 'delete', request()->route()->parameter('business')))
+            if (!$this->checkUserPermission('maintenance', 'delete', (request()->has('business') ? request()->business : null)))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -791,6 +1020,38 @@ class MaintenanceController extends Controller
         }
 
         $query->where('buildings.id', '=', $building);
+
+        foreach ($columnsToSearch as $column => $whereInfo)
+        {
+            if ($whereInfo['operation'] == 'BETWEEN')
+            {
+                if (count($whereInfo['values']) == 1)
+                {
+                    $query->whereBetween($column, [$whereInfo['values'][0], $whereInfo['values'][0]]);
+                }
+                else if (count($whereInfo['values']) % 2 == 0)
+                {
+                    for ($i = 0; $i < count($whereInfo['values']); $i + 2)
+                    {
+                        $query->whereBetween($column, [$whereInfo['values'][$i], $whereInfo['values'][($i + 1)]]);
+                    }
+                }
+            }
+            else if ($whereInfo['operation'] == 'LIKE')
+            {
+                foreach ($whereInfo['values'] as $value)
+                {
+                    $query->where($column, 'LIKE', '%'.$value.'%');
+                }
+            }
+            else if ($whereInfo['operation'] == 'EQUALS')
+            {
+                foreach ($whereInfo['values'] as $value)
+                {
+                    $query->where($column, '=', $value);
+                }
+            }
+        }
 
         return $query;
     }

@@ -257,6 +257,1064 @@
                 }
             }
         },
+        "/api/buildings/": {
+            "get": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Show buildings on system",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "buildings.index",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show buildings available"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/buildings/export": {
+            "get": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Export buildings on system to a file",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "buildings.export",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return a link to download exported file"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/buildings/{id}": {
+            "get": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Show a specific building info",
+                "description": "<b>Important:</b><br>\n    *          Business's ID need to be setted if user authenticated:<br>\n    *          1 - Don't have a management role with permission 'building > read' enabled or;<br>\n    *          2 - Have a role with permission 'building > read' enabled in a specific business;<br>\n    *          On first case, we can see all buildings, but in second case we can only see info of buildings how\n    *          is attached on all business.",
+                "operationId": "buildings.show",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Building's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show maintenance info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Update a building on system",
+                "operationId": "buildings.update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Building's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New building's name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "New building's address",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "New building's city",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "New building's state",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "manager_name",
+                        "in": "query",
+                        "description": "New building's manager_name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New building's phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New building's email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "site",
+                        "in": "query",
+                        "description": "New building's site",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "New building's business",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "in": "query",
+                        "description": "New building's owner",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "New building's status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show building updated info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Delete a specific building on system",
+                "operationId": "buildings.delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Building's ID to be deleted",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Building removed on system"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/buildings": {
+            "post": {
+                "tags": [
+                    "buildings"
+                ],
+                "summary": "Create a new building on system",
+                "operationId": "buildings.store",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New building's name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "New building's address",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "New building's city",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "New building's state",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "manager_name",
+                        "in": "query",
+                        "description": "New building's manager_name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New building's phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New building's email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "site",
+                        "in": "query",
+                        "description": "New building's site",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "New building's business",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "owner",
+                        "in": "query",
+                        "description": "New building's owner",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "New building's status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show building created info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses/": {
+            "get": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Show businesses on system",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "businesses.index",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show businesses available"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses/export": {
+            "get": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Export businesses on system to a file",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "businesses.export",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return a link to download exported file"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses/{id}/associate/{user}": {
+            "post": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Associate a existent user to a business",
+                "description": "",
+                "operationId": "businesses.associate.user",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Business's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "User's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User associated successfully"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses/{id}/disassociate/{user}": {
+            "delete": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Disassociate a existent user in a business",
+                "description": "",
+                "operationId": "businesses.disassociate.user",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Business's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user",
+                        "in": "path",
+                        "description": "User's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User disassociated successfully"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses/{id}": {
+            "get": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Show a specific business info",
+                "description": "<b>Important:</b><br>\n    *          Business's ID need to be setted if user authenticated:<br>\n    *          1 - Don't have a management role with permission 'business > read' enabled or;<br>\n    *          2 - Have a role with permission 'business > read' enabled in a specific business;<br>\n    *          On first case, we can see all management businesses, but in second case we can only see info of businesses how\n    *          is attached on all business.",
+                "operationId": "businesses.show",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Business's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show question info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Create a new business on system",
+                "operationId": "businesses.update",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Business's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New business's name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cnpj",
+                        "in": "query",
+                        "description": "New business's cnpj",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New business's phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "New business's address",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "New business's city",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "New business's state",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "zip",
+                        "in": "query",
+                        "description": "New business's zip",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show business updated info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Delete a specific business on system",
+                "operationId": "businesses.delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Business's ID to be deleted",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Business removed on system"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/businesses": {
+            "post": {
+                "tags": [
+                    "businesses"
+                ],
+                "summary": "Create a new business on system",
+                "operationId": "businesses.store",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New business's name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "cnpj",
+                        "in": "query",
+                        "description": "New business's cnpj",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "New business's phone",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "New business's address",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "New business's city",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "New business's state",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "zip",
+                        "in": "query",
+                        "description": "New business's zip",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show business created info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/logs/": {
+            "get": {
+                "tags": [
+                    "logs"
+                ],
+                "summary": "Show logs on system",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "logs.index",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID, if used a user with management role, don't set it",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show logs available"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/logs/export": {
+            "get": {
+                "tags": [
+                    "logs"
+                ],
+                "summary": "Export logs on system to a file",
+                "description": "On this route, we can set '*-order' with 'asc' or 'desc'\n    *          and '*-search' with any word, in '*', we can too set specifics DB column to\n    *          compare between dates in '*-search' we need set a pipe separing the\n    *          values, like 'date1|date2', pipe can be used to set more search\n    *          words too, but remember, they will compare using 'AND' in 'WHERE'\n    *          clasule, they dynamic values only can't be setted on SwaggerUI.",
+                "operationId": "logs.export",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID, if used a user with management role, don't set it",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "building",
+                        "in": "query",
+                        "description": "Building's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Return a link to download exported file"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
         "/api/maintenances/": {
             "get": {
                 "tags": [
@@ -282,6 +1340,24 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -331,6 +1407,24 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -402,6 +1496,254 @@
                         "bearer_token": []
                     }
                 ]
+            },
+            "put": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Update a maintenance on system",
+                "operationId": "maintenances.update",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID (don't set if you want to create a management role)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance's ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New maintenance's name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "description": "New maintenance's description",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "New maintenance's start date",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "New maintenance's end date",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_completed",
+                        "in": "query",
+                        "description": "New maintenance's completed status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "is_approved",
+                        "in": "query",
+                        "description": "New maintenance's approved status",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "building",
+                        "in": "query",
+                        "description": "New maintenance's building",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show maintenance updated info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Delete a specific maintenance on system",
+                "operationId": "maintenances.delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Maintenance's ID to be deleted",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Maintenance removed on system"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
+            }
+        },
+        "/api/maintenances": {
+            "post": {
+                "tags": [
+                    "maintenances"
+                ],
+                "summary": "Create a new maintenance on system",
+                "operationId": "maintenances.store",
+                "parameters": [
+                    {
+                        "name": "business",
+                        "in": "query",
+                        "description": "Business's ID (don't set if you want to create a management role)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "New maintenance's name",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "description": "New maintenance's description",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "New maintenance's start date",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "New maintenance's end date",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_completed",
+                        "in": "query",
+                        "description": "New maintenance's completed status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "is_approved",
+                        "in": "query",
+                        "description": "New maintenance's approved status",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "building",
+                        "in": "query",
+                        "description": "New maintenance's building",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Show maintenance created info"
+                    },
+                    "400": {
+                        "description": "Validation failed"
+                    },
+                    "401": {
+                        "description": "Unauthorized (User don't have permission, access token expired or isn't logged yet)"
+                    },
+                    "500": {
+                        "description": "API internal error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearer_token": []
+                    }
+                ]
             }
         },
         "/api/questions/": {
@@ -429,6 +1771,24 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -478,6 +1838,24 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -819,6 +2197,24 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -858,6 +2254,24 @@
                         "required": false,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -1200,6 +2614,24 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -1239,6 +2671,24 @@
                         "required": false,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Rows limit by page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -1647,6 +3097,18 @@
         {
             "name": "auth",
             "description": "auth"
+        },
+        {
+            "name": "buildings",
+            "description": "buildings"
+        },
+        {
+            "name": "businesses",
+            "description": "businesses"
+        },
+        {
+            "name": "logs",
+            "description": "logs"
         },
         {
             "name": "maintenances",

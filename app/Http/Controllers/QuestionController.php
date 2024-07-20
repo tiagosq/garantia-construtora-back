@@ -51,6 +51,20 @@ class QuestionController extends Controller
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Show questions available on maintenance",
@@ -139,6 +153,20 @@ class QuestionController extends Controller
     *          name="maintenance",
     *          required=true,
     *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Response(
     *          response=200,

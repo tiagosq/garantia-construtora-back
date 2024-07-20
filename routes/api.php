@@ -28,8 +28,20 @@ Route::group([
     Route::post('/refresh', [AuthController::class, 'refresh'])->middleware('auth:api')->name('auth.refresh');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('auth.reset-password');
     Route::post('/forget-password', [AuthController::class, 'forgetPassword'])->name('auth.forget-password');
-    Route::post('/me', [AuthController::class, 'me'])->middleware('auth:api')->name('auth.me'); // Only for tests, remove after...
 });
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => '{business}/buildings'
+], function ($router) {
+    // Basic CRUD
+    Route::post('/', [BuildingController::class, 'store'])->middleware('auth:api')->name('buildings.store');
+    Route::get('/', [BuildingController::class, 'index'])->middleware('auth:api')->name('buildings.index');
+    Route::get('/{id}', [BuildingController::class, 'show'])->middleware('auth:api')->name('buildings.show');
+    Route::put('/{id}', [BuildingController::class, 'update'])->middleware('auth:api')->name('buildings.update');
+    Route::delete('/{id}', [BuildingController::class, 'destroy'])->middleware('auth:api')->name('buildings.destroy');
+});
+
 
 Route::group([
     'middleware' => 'api',
@@ -45,34 +57,6 @@ Route::group([
     // Other operations
     Route::post('/{id}/associate/{user}', [BusinessController::class, 'associateUser'])->middleware('auth:api')->name('businesses.associate.user');
     Route::delete('/{id}/disassociate/{user}', [BusinessController::class, 'disassociateUser'])->middleware('auth:api')->name('businesses.disassociate.user');
-
-    // Routes using others controllers
-    Route::group([
-        'middleware' => 'api',
-        'prefix' => '{business}/buildings'
-    ], function ($router) {
-        // Basic CRUD
-        Route::post('/', [BuildingController::class, 'store'])->middleware('auth:api')->name('buildings.store');
-        Route::get('/', [BuildingController::class, 'index'])->middleware('auth:api')->name('buildings.index');
-        Route::get('/{id}', [BuildingController::class, 'show'])->middleware('auth:api')->name('buildings.show');
-        Route::put('/{id}', [BuildingController::class, 'update'])->middleware('auth:api')->name('buildings.update');
-        Route::delete('/{id}', [BuildingController::class, 'destroy'])->middleware('auth:api')->name('buildings.destroy');
-
-        Route::group([
-            'middleware' => 'api',
-            'prefix' => '{building}/maintenances'
-        ], function ($router) {
-            // Basic CRUD.
-            Route::post('/', [MaintenanceController::class, 'store'])->middleware('auth:api')->name('maintenances.store');
-            Route::get('/', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('maintenances.index');
-            Route::get('/{id}', [MaintenanceController::class, 'show'])->middleware('auth:api')->name('maintenances.show');
-            Route::put('/{id}', [MaintenanceController::class, 'update'])->middleware('auth:api')->name('maintenances.update');
-            Route::delete('/{id}', [MaintenanceController::class, 'destroy'])->middleware('auth:api')->name('maintenances.destroy');
-
-
-
-        });
-    });
 });
 
 Route::group([
@@ -80,6 +64,21 @@ Route::group([
     'prefix' => 'logs'
 ], function ($router) {
     Route::get('/', [LogController::class, 'index'])->middleware('auth:api')->name('logs.index');
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'maintenances'
+], function ($router) {
+    // Basic CRUD.
+    Route::post('/', [MaintenanceController::class, 'store'])->middleware('auth:api')->name('maintenances.store');
+    Route::get('/', [MaintenanceController::class, 'index'])->middleware('auth:api')->name('maintenances.index');
+    Route::get('/{id}', [MaintenanceController::class, 'show'])->middleware('auth:api')->name('maintenances.show');
+    Route::put('/{id}', [MaintenanceController::class, 'update'])->middleware('auth:api')->name('maintenances.update');
+    Route::delete('/{id}', [MaintenanceController::class, 'destroy'])->middleware('auth:api')->name('maintenances.destroy');
+
+
+
 });
 
 Route::group([

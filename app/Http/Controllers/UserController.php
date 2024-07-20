@@ -43,6 +43,20 @@ class UserController extends Controller
     *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Show users available on business if setted or management users if business isn't setted",
@@ -124,6 +138,20 @@ class UserController extends Controller
     *          name="business",
     *          required=false,
     *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Rows limit by page",
+    *          in="query",
+    *          name="limit",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="Page number",
+    *          in="query",
+    *          name="page",
+    *          required=true,
+    *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Response(
     *          response=200,
@@ -389,7 +417,7 @@ class UserController extends Controller
 
         try
         {
-            if (!empty(auth()->user()))
+            if (empty(auth()->user()))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -850,7 +878,7 @@ class UserController extends Controller
 
         try
         {
-            if (!empty(auth()->user()))
+            if (empty(auth()->user()))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
@@ -1055,7 +1083,7 @@ class UserController extends Controller
         {
             DB::beginTransaction();
 
-            if (!empty(auth()->user()))
+            if (empty(auth()->user()))
             {
                 throw new UnauthorizedException('Unauthorized');
             }
