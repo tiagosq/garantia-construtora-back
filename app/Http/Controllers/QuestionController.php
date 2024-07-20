@@ -1120,7 +1120,7 @@ class QuestionController extends Controller
         }
         else
         {
-            $query->orderBy('name', 'desc');
+            $query->orderBy('created_at', 'desc');
         }
 
         $query->leftJoin('maintenances', 'maintenances.id', '=', 'questions.maintenance');
