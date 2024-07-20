@@ -55,14 +55,14 @@ class QuestionController extends Controller
     *          description="Rows limit by page",
     *          in="query",
     *          name="limit",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Parameter(
     *          description="Page number",
     *          in="query",
     *          name="page",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Response(
@@ -158,14 +158,14 @@ class QuestionController extends Controller
     *          description="Rows limit by page",
     *          in="query",
     *          name="limit",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Parameter(
     *          description="Page number",
     *          in="query",
     *          name="page",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="integer"),
     *      ),
     *      @OA\Response(
