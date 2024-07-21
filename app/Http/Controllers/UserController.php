@@ -1237,6 +1237,7 @@ class UserController extends Controller
         $query = User::query();
 
         $query->select([
+            'users.id as id',
             'users.email as email',
             'users.fullname as fullname',
             'users.phone as phone',

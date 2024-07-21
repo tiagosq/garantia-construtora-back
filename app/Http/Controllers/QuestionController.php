@@ -1162,6 +1162,7 @@ class QuestionController extends Controller
 
         $query = Question::query();
         $query->select([
+            'questions.id as id',
             'questions.name as name',
             'questions.description as description',
             'questions.date as date',

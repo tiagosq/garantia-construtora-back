@@ -511,6 +511,7 @@ class BusinessController extends Controller
             $query = Business::query();
 
             $query->select([
+                'bisomesses.id as id',
                 'businesses.name as name',
                 'businesses.cnpj as cnpj',
                 'businesses.email as email',

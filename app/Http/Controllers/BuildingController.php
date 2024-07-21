@@ -1053,6 +1053,7 @@ class BuildingController extends Controller
 
         $query = Building::query();
         $query->select([
+            'buildings.id as id',
             'buildings.name as name',
             'buildings.address as address',
             'buildings.city as city',

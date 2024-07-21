@@ -370,6 +370,7 @@ class LogController extends Controller
         $query = Log::query();
 
         $query->select([
+            'users.id as id',
             'users.email as user',
             'logs.ip as ip',
             'logs.user_agent as user_agent',

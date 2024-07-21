@@ -885,7 +885,6 @@ class MaintenanceController extends Controller
         $columnsOperationSearch = [
             'EQUALS' => [
                 'id',
-                'status',
                 'is_completed',
                 'is_approved',
             ],
@@ -982,6 +981,7 @@ class MaintenanceController extends Controller
         $query = Maintenance::query();
 
         $query->select([
+            'maintenances.id as id',
             'maintenances.name as name',
             'maintenances.description as description',
             'maintenances.start_date as start_date',
@@ -989,9 +989,6 @@ class MaintenanceController extends Controller
             'maintenances.is_completed as is_completed',
             'maintenances.is_approved as is_approved',
             'buildings.name as building',
-            'maintenances.email as email',
-            'maintenances.site as site',
-            'maintenances.status as status',
             'users.fullname as user',
             'businesses.name as business',
             'maintenances.created_at as created_at',

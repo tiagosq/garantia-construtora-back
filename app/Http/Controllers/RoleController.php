@@ -996,6 +996,7 @@ class RoleController extends Controller {
         $business = ($request->has('business') ? $request->only('business')['business'] : null);
         $query = Role::query();
         $query->select([
+            'roles.id as id',
             'roles.name as name',
             'roles.permissions as permissions',
             'roles.order as order',
