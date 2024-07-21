@@ -28,12 +28,14 @@ trait Attachment
             $newFileName = $ulid .'_'.$fileName;
 
             Storage::put(implode(DIRECTORY_SEPARATOR, [$path, $newFileName]), $result['content']);
-
+            $url = Storage::disk('public')->url(implode('/', array_merge($pathSplitted,[$newFileName])));
             return [
                 'id' => $ulid,
                 'filename' => $newFileName,
                 'path' => storage_path($path),
                 'mimetype' => $this->getMimetype(implode(DIRECTORY_SEPARATOR, array_merge([Storage::path($path), $newFileName]))),
+                'size' => File::size(implode(DIRECTORY_SEPARATOR, array_merge([Storage::path($path), $newFileName]))),
+                'url' => $url,
             ];
         }
 

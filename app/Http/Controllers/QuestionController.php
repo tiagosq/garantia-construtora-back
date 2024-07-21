@@ -214,9 +214,11 @@ class QuestionController extends Controller
 
             // Add CSV headers
             fputcsv($file, [
-                'Questão',
-                'Resposta',
+                'Nome',
+                'Descrição',
+                'Data',
                 'Status',
+                'Observação',
                 'Manutenção',
                 'Prédio',
                 'Negócio',
@@ -227,9 +229,11 @@ class QuestionController extends Controller
             foreach ($questions as $question)
             {
                 fputcsv($file, [
-                    $question->question,
-                    $question->answer,
+                    $question->name,
+                    $question->description,
+                    $question->date,
                     $question->status,
+                    $question->observations,
                     $question->maintenance,
                     $question->building,
                     $question->business,
@@ -349,9 +353,11 @@ class QuestionController extends Controller
             $query = Question::query();
 
             $query->select([
-                'questions.question as question',
-                'questions.answer as answer',
+                'questions.name as name',
+                'questions.description as description',
+                'questions.date as date',
                 'questions.status as status',
+                'questions.observations as observations',
                 'maintenances.name as maintenance',
                 'buildings.name as building',
                 'businesses.name as business',
@@ -364,6 +370,18 @@ class QuestionController extends Controller
             $query->leftJoin('businesses', 'businesses.id', '=', 'buildings.business');
             $query->where('questions.id', '=', request()->id);
             $question = $query->first();
+
+            $query = AttachmentModel::query();
+
+            $query->select([
+                'attachments.name as name',
+                'attachments.type as type',
+                'attachments.size as size',
+                'attachments.url as url',
+            ]);
+
+            $query->where('attachments.question', '=', request()->id);
+            $question['attachments'] = $query->get();
 
             $this->setAfter(json_encode(['message' => 'Showing question available']));
             $returnMessage =  response()->json(['message' => 'Showing question available', 'data' => $question]);
@@ -405,25 +423,39 @@ class QuestionController extends Controller
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
-    *          description="New question's question",
+    *          description="New question's name",
     *          in="query",
-    *          name="question",
+    *          name="name",
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
-    *          description="New question's answer",
+    *          description="New question's description",
     *          in="query",
-    *          name="answer",
+    *          name="description",
     *          required=true,
     *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New question's date",
+    *          in="query",
+    *          name="date",
+    *          required=true,
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New question's status",
     *          in="query",
     *          name="status",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="boolean"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New question's observations",
+    *          in="query",
+    *          name="observations",
+    *          required=true,
+    *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New question's maintenance",
@@ -510,9 +542,11 @@ class QuestionController extends Controller
 
             // Question validator
             $questionValidator = Validator::make($requestTreated, [
-                'question' => 'required|string',
-                'answer' => 'required|string',
-                'status' => 'required|boolean',
+                'name' => 'required|string',
+                'description' => 'required|string',
+                'date' => 'required|date',
+                'status' => 'sometimes|boolean',
+                'observations' => 'required|string',
                 'maintenance' => 'required|string|exists:maintenances,id',
             ]);
 
@@ -530,9 +564,14 @@ class QuestionController extends Controller
 
             $question = new Question();
             $question->id = Ulid::generate();
-            $question->question = $requestTreated['question'];
-            $question->answer = $requestTreated['answer'];
-            $question->status = $requestTreated['status'];
+            $question->name = $requestTreated['name'];
+            $question->description = $requestTreated['description'];
+            $question->date = $requestTreated['date'];
+            if (request()->has('status'))
+            {
+                $question->status = $requestTreated['status'];
+            }
+            $question->observations = $requestTreated['observations'];
             $question->maintenance = $requestTreated['maintenance'];
             $question->save();
 
@@ -563,6 +602,8 @@ class QuestionController extends Controller
                     $attachment->name = $attachmentInfo['filename'];
                     $attachment->path = $attachmentInfo['path'];
                     $attachment->type = $attachmentInfo['mimetype'];
+                    $attachment->size = $attachmentInfo['size'];
+                    $attachment->url = $attachmentInfo['url'];
                     $attachment->question = $question->id;
                     $attachment->user = auth()->user()->id;
                     $attachment->status = true;
@@ -624,18 +665,25 @@ class QuestionController extends Controller
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
-    *          description="New question's question",
+    *          description="New question's name",
     *          in="query",
-    *          name="question",
+    *          name="name",
     *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
-    *          description="New question's answer",
+    *          description="New question's description",
     *          in="query",
-    *          name="answer",
+    *          name="description",
     *          required=false,
     *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New question's date",
+    *          in="query",
+    *          name="date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New question's status",
@@ -645,10 +693,17 @@ class QuestionController extends Controller
     *          @OA\Schema(type="boolean"),
     *      ),
     *      @OA\Parameter(
+    *          description="New question's observations",
+    *          in="query",
+    *          name="observations",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
     *          description="New question's maintenance",
     *          in="query",
     *          name="maintenance",
-    *          required=false,
+    *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -674,7 +729,7 @@ class QuestionController extends Controller
     *      @OA\Parameter(
     *          description="New question's attachments to remove",
     *          in="query",
-    *          name="attachments_to_add",
+    *          name="attachments_to_remove",
     *          required=false,
     *          @OA\Schema(
     *               type="array",
@@ -767,9 +822,11 @@ class QuestionController extends Controller
             // Question validator
             $questionValidator = Validator::make($requestTreated, [
                 'id' => 'required|string|exists:questions,id',
-                'question' => 'sometimes|string',
-                'answer' => 'sometimes|string',
+                'name' => 'sometimes|string',
+                'description' => 'sometimes|string',
+                'date' => 'sometimes|date',
                 'status' => 'sometimes|boolean',
+                'observations' => 'sometimes|string',
                 'maintenance' => 'sometimes|string|exists:maintenances,id',
             ]);
 
@@ -830,6 +887,8 @@ class QuestionController extends Controller
                     $attachment->name = $attachmentInfo['filename'];
                     $attachment->path = $attachmentInfo['path'];
                     $attachment->type = $attachmentInfo['mimetype'];
+                    $attachment->size = $attachmentInfo['size'];
+                    $attachment->url = $attachmentInfo['url'];
                     $attachment->question = $question->id;
                     $attachment->user = auth()->user()->id;
                     $attachment->status = true;
@@ -1017,12 +1076,14 @@ class QuestionController extends Controller
                 'maintenance',
             ],
             'LIKE' => [
-                'question',
-                'answer',
+                'name',
+                'description',
+                'observations',
             ],
             'BETWEEN' => [
                 'created_at',
                 'updated_at',
+                'date',
             ],
         ];
 
@@ -1101,9 +1162,11 @@ class QuestionController extends Controller
 
         $query = Question::query();
         $query->select([
-            'questions.question as question',
-            'questions.answer as answer',
+            'questions.name as name',
+            'questions.description as description',
+            'questions.date as date',
             'questions.status as status',
+            'questions.observations as observations',
             'maintenances.name as maintenance',
             'buildings.name as building',
             'businesses.name as business',

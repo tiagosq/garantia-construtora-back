@@ -436,14 +436,14 @@ class MaintenanceController extends Controller
     *          in="query",
     *          name="start_date",
     *          required=true,
-    *          @OA\Schema(type="boolean"),
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's end date",
     *          in="query",
     *          name="end_date",
     *          required=true,
-    *          @OA\Schema(type="string"),
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's completed status",
@@ -457,7 +457,7 @@ class MaintenanceController extends Controller
     *          in="query",
     *          name="is_approved",
     *          required=false,
-    *          @OA\Schema(type="string"),
+    *          @OA\Schema(type="boolean"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's building",
@@ -532,7 +532,7 @@ class MaintenanceController extends Controller
             {
                 $maintenance->is_approved = request()->is_approved;
             }
-            $maintenance->building = request()->route()->parameter('building');
+            $maintenance->building = request()->building;
             $maintenance->user = auth()->user()->id;
             $maintenance->save();
 
@@ -606,14 +606,14 @@ class MaintenanceController extends Controller
     *          in="query",
     *          name="start_date",
     *          required=true,
-    *          @OA\Schema(type="boolean"),
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's end date",
     *          in="query",
     *          name="end_date",
     *          required=true,
-    *          @OA\Schema(type="string"),
+    *          @OA\Schema(type="string",format="date"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's completed status",
@@ -627,7 +627,7 @@ class MaintenanceController extends Controller
     *          in="query",
     *          name="is_approved",
     *          required=false,
-    *          @OA\Schema(type="string"),
+    *          @OA\Schema(type="boolean"),
     *      ),
     *      @OA\Parameter(
     *          description="New maintenance's building",

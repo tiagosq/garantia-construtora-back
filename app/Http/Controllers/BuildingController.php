@@ -429,6 +429,13 @@ class BuildingController extends Controller
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
+    *          description="New building's zip",
+    *          in="query",
+    *          name="zip",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
     *          description="New building's manager_name",
     *          in="query",
     *          name="manager_name",

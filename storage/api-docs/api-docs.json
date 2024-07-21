@@ -279,7 +279,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -288,7 +288,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -337,7 +337,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -346,7 +346,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -640,6 +640,15 @@
                         }
                     },
                     {
+                        "name": "zip",
+                        "in": "query",
+                        "description": "New building's zip",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "manager_name",
                         "in": "query",
                         "description": "New building's manager_name",
@@ -737,7 +746,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -746,7 +755,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -786,7 +795,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -795,7 +804,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1212,7 +1221,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1221,7 +1230,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1279,7 +1288,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1288,7 +1297,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1346,7 +1355,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1355,7 +1364,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1413,7 +1422,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1422,7 +1431,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1546,7 +1555,8 @@
                         "description": "New maintenance's start date",
                         "required": true,
                         "schema": {
-                            "type": "boolean"
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
@@ -1555,7 +1565,8 @@
                         "description": "New maintenance's end date",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
@@ -1573,7 +1584,7 @@
                         "description": "New maintenance's approved status",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     },
                     {
@@ -1685,7 +1696,8 @@
                         "description": "New maintenance's start date",
                         "required": true,
                         "schema": {
-                            "type": "boolean"
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
@@ -1694,7 +1706,8 @@
                         "description": "New maintenance's end date",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
@@ -1712,7 +1725,7 @@
                         "description": "New maintenance's approved status",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "boolean"
                         }
                     },
                     {
@@ -1777,7 +1790,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1786,7 +1799,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1844,7 +1857,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1853,7 +1866,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -1954,21 +1967,31 @@
                         }
                     },
                     {
-                        "name": "question",
+                        "name": "name",
                         "in": "query",
-                        "description": "New question's question",
+                        "description": "New question's name",
                         "required": false,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "answer",
+                        "name": "description",
                         "in": "query",
-                        "description": "New question's answer",
+                        "description": "New question's description",
                         "required": false,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "New question's date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
@@ -1981,10 +2004,19 @@
                         }
                     },
                     {
+                        "name": "observations",
+                        "in": "query",
+                        "description": "New question's observations",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "maintenance",
                         "in": "query",
                         "description": "New question's maintenance",
-                        "required": false,
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }
@@ -2010,7 +2042,7 @@
                         }
                     },
                     {
-                        "name": "attachments_to_add",
+                        "name": "attachments_to_remove",
                         "in": "query",
                         "description": "New question's attachments to remove",
                         "required": false,
@@ -2103,30 +2135,49 @@
                         }
                     },
                     {
-                        "name": "question",
+                        "name": "name",
                         "in": "query",
-                        "description": "New question's question",
+                        "description": "New question's name",
                         "required": true,
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "answer",
+                        "name": "description",
                         "in": "query",
-                        "description": "New question's answer",
+                        "description": "New question's description",
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "New question's date",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
                         }
                     },
                     {
                         "name": "status",
                         "in": "query",
                         "description": "New question's status",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "observations",
+                        "in": "query",
+                        "description": "New question's observations",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -2202,7 +2253,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2211,7 +2262,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2260,7 +2311,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2269,7 +2320,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2619,7 +2670,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2628,7 +2679,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2677,7 +2728,7 @@
                         "name": "limit",
                         "in": "query",
                         "description": "Rows limit by page",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -2686,7 +2737,7 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }

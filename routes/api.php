@@ -32,7 +32,7 @@ Route::group([
 
 Route::group([
     'middleware' => 'api',
-    'prefix' => '{business}/buildings'
+    'prefix' => 'buildings'
 ], function ($router) {
     // Basic CRUD
     Route::post('/', [BuildingController::class, 'store'])->middleware('auth:api')->name('buildings.store');

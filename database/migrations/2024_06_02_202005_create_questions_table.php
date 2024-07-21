@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('questions', function (Blueprint $table) {
             $table->ulid('id')->primary();
-            $table->string('question');
-            $table->string('answer');
+            $table->string('name');
+            $table->string('description');
+            $table->date('date');
             $table->boolean('status')->default(false);
+            $table->string('observations');
             $table->ulid('maintenance');
             $table->foreign('maintenance')->references('id')->on('maintenances');
             $table->timestamps();
