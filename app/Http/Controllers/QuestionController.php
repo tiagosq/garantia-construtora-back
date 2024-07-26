@@ -844,13 +844,21 @@ class QuestionController extends Controller
 
             $question = Question::find(request()->id);
 
-            if (request()->has('question'))
+            if (request()->has('name'))
             {
-                $question->question = $requestTreated['question'];
+                $question->name = $requestTreated['name'];
             }
-            if (request()->has('answer'))
+            if (request()->has('description'))
             {
-                $question->answer = $requestTreated['answer'];
+                $question->description = $requestTreated['description'];
+            }
+            if (request()->has('date'))
+            {
+                $question->date = $requestTreated['date'];
+            }
+            if (request()->has('observations'))
+            {
+                $question->observations = $requestTreated['observations'];
             }
             if (request()->has('status'))
             {
