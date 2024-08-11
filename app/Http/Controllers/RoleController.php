@@ -326,7 +326,7 @@ class RoleController extends Controller {
             $query->where('roles.id', '=', request()->id);
             $query->where('roles.management', '=', !$business);
 
-            $role = $query->get();
+            $role = $query->first();
 
             $this->setAfter(json_encode(['message' => 'Showing role ' . $role->name, 'data' => $role]));
             $returnMessage =  response()->json(['message' => 'Showing role ' . $role->name, 'data' => $role]);
