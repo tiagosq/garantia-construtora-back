@@ -436,13 +436,7 @@ class UserController extends Controller
                 'users.updated_at as updated_at',
             ]);
 
-            if (!empty($business))
-            {
-                $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
-                $query->where('user_roles.business', '=', $business);
-            }
-
-            $query->where('users.id', '=', request()->id);
+            $query->where('users.id', '=', auth()->user()->id);
             $user = $query->first();
 
             if (!empty($user))
@@ -452,8 +446,8 @@ class UserController extends Controller
             }
             else
             {
-                $this->setAfter(json_encode(['message' => 'User ' . request()->route()->id . ' not present in this business.']));
-                $returnMessage =  response()->json(['message' => 'User ' . request()->route()->id . ' not present in this business.']);
+                $this->setAfter(json_encode(['message' => 'User ' . request()->route()->id . ' not present on system.']));
+                $returnMessage =  response()->json(['message' => 'User ' . request()->route()->id . ' not present on system.']);
             }
         }
         catch (UnauthorizedException $ex)
