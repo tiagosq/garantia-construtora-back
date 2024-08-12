@@ -427,6 +427,7 @@ class UserController extends Controller
             $query = User::query();
 
             $query->select([
+                'users.id as id',
                 'users.email as email',
                 'users.fullname as fullname',
                 'users.phone as phone',
@@ -439,10 +440,25 @@ class UserController extends Controller
             $query->where('users.id', '=', auth()->user()->id);
             $user = $query->first();
 
+
             if (!empty($user))
             {
+                $userRolesArray = [];
+                $tmpUser = $user;
+                foreach ($tmpUser->userRoles as $userRole)
+                {
+                    $userRolesArray[] = [
+                        [ "business_id" => $userRole->businessInfo->id, "business" => $userRole->businessInfo->name] ,
+                        [ "role_id" => $userRole->roleInfo->id, "role" => $userRole->roleInfo->name ]
+                    ];
+                }
+
+                $user["userRoles"] = $userRolesArray;
+                $userArray = $user->toArray();
+                unset($userArray['user_roles']);
+
                 $this->setAfter(json_encode(['message' => 'Showing user ' . $user->email]));
-                $returnMessage =  response()->json(['message' => 'Showing user ' . $user->email, 'data' => $user]);
+                $returnMessage =  response()->json(['message' => 'Showing user ' . $user->email, 'data' => $userArray]);
             }
             else
             {

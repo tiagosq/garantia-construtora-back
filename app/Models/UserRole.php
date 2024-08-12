@@ -18,18 +18,18 @@ class UserRole extends Model
         'role',
     ];
 
-    public function business(): hasOne
+    public function businessInfo(): hasOne
     {
-        return $this->hasOne(Business::class);
+        return $this->hasOne(Business::class, "id", "business");
     }
 
-    public function user(): HasOne
+    public function userInfo(): HasOne
     {
-        return $this->hasOne(User::class);
+        return $this->hasOne(User::class, "id", "user");
     }
 
-    public function role(): HasOne
+    public function roleInfo(): HasOne
     {
-        return $this->hasOne(Role::class);
+        return $this->hasOne(Role::class, "id", "role");
     }
 }
