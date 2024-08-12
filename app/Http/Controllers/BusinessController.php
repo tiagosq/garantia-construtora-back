@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\Uid\Ulid;
@@ -805,9 +806,21 @@ class BusinessController extends Controller
                 ) , [
                 'id' => 'required|string|exists:businesses,id',
                 'name' => 'sometimes|string',
-                'cnpj' => 'sometimes|string|unique:businesses,cnpj',
-                'email' => 'sometimes|email|unique:businesses,email',
-                'phone' => 'sometimes|string|unique:businesses,phone',
+                'cnpj' => [
+                    'sometimes',
+                    'string',
+                    Rule::unique('businesses', 'cnpj')->ignore(request()->route()->id, 'id')
+                ],
+                'email' => [
+                    'sometimes',
+                    'email',
+                    Rule::unique('businesses', 'email')->ignore(request()->route()->id, 'id')
+                ],
+                'phone' => [
+                    'sometimes',
+                    'string',
+                    Rule::unique('businesses', 'phone')->ignore(request()->route()->id, 'id')
+                ],
                 'address' => 'sometimes|string',
                 'city' => 'sometimes|string',
                 'state' => 'sometimes|string',
