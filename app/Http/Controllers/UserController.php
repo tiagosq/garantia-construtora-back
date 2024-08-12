@@ -449,7 +449,7 @@ class UserController extends Controller
                 {
                     $userRolesArray[] = [
                         [ "business_id" => $userRole->businessInfo->id, "business" => $userRole->businessInfo->name] ,
-                        [ "role_id" => $userRole->roleInfo->id, "role" => $userRole->roleInfo->name ]
+                        [ "role_id" => $userRole->roleInfo->id, "role" => $userRole->roleInfo->name, "permissions" => $userRole->roleInfo->permissions ]
                     ];
                 }
 
