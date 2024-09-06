@@ -96,7 +96,7 @@ class MaintenanceController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $limit = (request()->has('limit') ? request()->limit : 20);
+            $limit = (request()->has('limit') ? request()->limit : PHP_INT_MAX);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
             $maintenances = $this->filteredResults(request())->paginate($limit, ['*'], 'page', $page);
 

@@ -89,7 +89,7 @@ class RoleController extends Controller {
             }
 
             $query = $this->filteredResults(request());
-            $limit = (request()->has('limit') ? request()->only('limit')['limit'] : 20);
+            $limit = (request()->has('limit') ? request()->only('limit')['limit'] : PHP_INT_MAX);
             $page = (request()->has('page') ? (request()->only('page')['page'] - 1) : 0);
             $roles = $query->paginate($limit, ['*'], 'page', $page);
 
@@ -424,14 +424,10 @@ class RoleController extends Controller {
             if (!empty(request()->route()->business))
             {
                 $userRoleWhereParams[] = ['business', '=', request()->route()->business];
-                $userRole = UserRole::where($userRoleWhereParams)->first();
-                $role = Role::find($userRole->role);
                 $roleWhereParams[] = ['management', '=', false];
             }
             else
             {
-                $userRole = UserRole::where($userRoleWhereParams)->first();
-                $role = Role::find($userRole->role);
                 $roleWhereParams[] = ['management', '=', true];
             }
 
@@ -943,16 +939,18 @@ class RoleController extends Controller {
             throw new ValidationException($validator);
         }
 
-        $business = ($request->has('business') ? $request->only('business')['business'] : null);
+        //$business = ($request->has('business') ? $request->only('business')['business'] : null);
         $query = Role::query();
         $query->select([
             'roles.id as id',
             'roles.name as name',
+            /*
             'roles.permissions as permissions',
             'roles.status as status',
             'roles.management as management',
             'roles.created_at as created_at',
             'roles.updated_at as updated_at',
+            */
         ]);
 
         if (!empty($columnsToOrder))
@@ -967,7 +965,7 @@ class RoleController extends Controller {
             $query->orderBy('name', 'asc');
         }
 
-        $query->where('roles.management', '=', !$business);
+        //$query->where('roles.management', '=', !$business);
 
         foreach ($columnsToSearch as $column => $whereInfo)
         {

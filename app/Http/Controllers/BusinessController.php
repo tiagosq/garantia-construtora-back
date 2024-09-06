@@ -85,7 +85,7 @@ class BusinessController extends Controller
             }
 
             $query = $this->filteredResults(request());
-            $limit = (request()->has('limit') ? request()->limit : 20);
+            $limit = (request()->has('limit') ? request()->limit : PHP_INT_MAX);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
             $businesses = $query->paginate($limit, ['*'], 'page', $page);
 

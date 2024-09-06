@@ -90,7 +90,7 @@ class UserController extends Controller
             $this->setBefore(json_encode(request()->all()));
 
             $query = $this->filteredResults(request());
-            $limit = (request()->has('limit') ? request()->limit : 20);
+            $limit = (request()->has('limit') ? request()->limit : PHP_INT_MAX);
             $page = (request()->has('page') ? (request()->page - 1) : 0);
             $users = $query->paginate($limit, ['*'], 'page', $page);
 
