@@ -2509,15 +2509,6 @@
                         }
                     },
                     {
-                        "name": "order",
-                        "in": "query",
-                        "description": "New role's order",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
                         "name": "permissions",
                         "in": "query",
                         "description": "New role's permissions",
@@ -2585,15 +2576,6 @@
                         "name": "name",
                         "in": "query",
                         "description": "New role's name",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "order",
-                        "in": "query",
-                        "description": "New role's order",
                         "required": true,
                         "schema": {
                             "type": "string"
