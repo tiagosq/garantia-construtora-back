@@ -194,7 +194,6 @@ class RoleController extends Controller {
             // Add CSV headers
             fputcsv($file, [
                 'Nome',
-                'Ordem',
                 'Status',
                 'Regra criado em',
                 'Regra atualizado em',
@@ -204,7 +203,6 @@ class RoleController extends Controller {
             {
                 fputcsv($file, [
                     $role->name,
-                    $role->order,
                     $role->status,
                     $role->created_at,
                     $role->updated_at
@@ -428,18 +426,16 @@ class RoleController extends Controller {
                 $userRoleWhereParams[] = ['business', '=', request()->route()->business];
                 $userRole = UserRole::where($userRoleWhereParams)->first();
                 $role = Role::find($userRole->role);
-                $roleWhereParams[] = ['order', '>=', $role->order];
                 $roleWhereParams[] = ['management', '=', false];
             }
             else
             {
                 $userRole = UserRole::where($userRoleWhereParams)->first();
                 $role = Role::find($userRole->role);
-                $roleWhereParams[] = ['order', '>=', $role->order];
                 $roleWhereParams[] = ['management', '=', true];
             }
 
-            $roles = Role::where($roleWhereParams)->orderBy('order', 'asc')->get();
+            $roles = Role::where($roleWhereParams)->orderBy('name', 'asc')->get();
             $this->setAfter(json_encode(['message' => 'Getted available roles to user','data' => $roles]));
             $returnMessage = response()->json(['message' => 'Getted available roles to user','data' => $roles], 200);
         }
@@ -483,13 +479,6 @@ class RoleController extends Controller {
     *          description="New role's name",
     *          in="query",
     *          name="name",
-    *          required=true,
-    *          @OA\Schema(type="string"),
-    *      ),
-    *      @OA\Parameter(
-    *          description="New role's order",
-    *          in="query",
-    *          name="order",
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
@@ -550,7 +539,6 @@ class RoleController extends Controller {
             $validator = Validator::make(request()->all(), [
                 'name' => 'required|string|max:16',
                 'permissions' => 'required|json',
-                'order' => 'required|numeric',
                 'status' => 'nullable|boolean',
                 'management' => 'nullable|boolean',
             ]);
@@ -560,8 +548,6 @@ class RoleController extends Controller {
                 throw new ValidationException($validator);
             }
 
-            $lastRole = Role::orderBy('order', 'desc')->first();
-
             $role = new Role();
             $ulid = Str::ulid();
             $role->id = $ulid;
@@ -569,16 +555,6 @@ class RoleController extends Controller {
             $role->permissions = request()->permissions;
             $role->status = (request()->has('status') ? request()->status : false);
             $role->management = (request()->has('management') ? request()->management : false);
-
-            if ($lastRole->order <= request()->order)
-            {
-                Role::where('order', '>=', request()->order)->increment('order', 1);
-                $role->order = request()->order;
-            }
-            else // $lastRole->order > request()->order
-            {
-                $role->order = ($lastRole->order++);
-            }
 
             $role->save();
 
@@ -647,13 +623,6 @@ class RoleController extends Controller {
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
-    *          description="New role's order",
-    *          in="query",
-    *          name="order",
-    *          required=false,
-    *          @OA\Schema(type="string"),
-    *      ),
-    *      @OA\Parameter(
     *          description="New role's permissions",
     *          in="query",
     *          name="permissions",
@@ -715,7 +684,6 @@ class RoleController extends Controller {
                 'id' => 'required|string|exists:roles,id',
                 'name' => 'required|string|max:16',
                 'permissions' => 'required|json',
-                'order' => 'required|numeric',
                 'status' => 'nullable|boolean',
                 'management' => 'nullable|boolean',
             ]);
@@ -742,29 +710,6 @@ class RoleController extends Controller {
             if (request()->has('management'))
             {
                 $role->management = request()->management;
-            }
-            if (request()->has('order'))
-            {
-                $lastRole = Role::orderBy('order', 'desc')->first();
-                $oldRoleOrder = $role->order;
-                $newRuleOrder = ($lastRole->order > request()->order ? request()->order : $lastRole->order);
-
-                if ($newRuleOrder > $oldRoleOrder)
-                {
-                    Role::where([
-                        ['order', '>', $oldRoleOrder],
-                        ['order', '<=', $newRuleOrder],
-                    ])->decrement('order', 1);
-                }
-                else if ($newRuleOrder < $oldRoleOrder)
-                {
-                    Role::where([
-                        ['order', '<', $oldRoleOrder],
-                        ['order', '>=', $newRuleOrder],
-                    ])->increment('order', 1);
-                }
-
-                $role->order = $newRuleOrder;
             }
 
             $role->save();
@@ -862,10 +807,7 @@ class RoleController extends Controller {
             }
 
             $role = Role::find(request()->id);
-            $orderOfDeletedRole = $role->order;
             $role->delete();
-            Role::where('order', '>', $orderOfDeletedRole)->decrement('order', 1);
-
             DB::commit();
 
             $this->setAfter(json_encode([
@@ -1007,7 +949,6 @@ class RoleController extends Controller {
             'roles.id as id',
             'roles.name as name',
             'roles.permissions as permissions',
-            'roles.order as order',
             'roles.status as status',
             'roles.management as management',
             'roles.created_at as created_at',
@@ -1023,7 +964,7 @@ class RoleController extends Controller {
         }
         else
         {
-            $query->orderBy('order', 'asc');
+            $query->orderBy('name', 'asc');
         }
 
         $query->where('roles.management', '=', !$business);
