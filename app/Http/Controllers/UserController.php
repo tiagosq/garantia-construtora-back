@@ -443,17 +443,20 @@ class UserController extends Controller
 
             if (!empty($user))
             {
-                $userRolesArray = [];
                 $tmpUser = $user;
+
+                $user["business"] = [ "id" => null, "name" => null ];
+                $user["role"] = [ "id" => null, "name" => null, "permissions" =>  null ];
+
                 foreach ($tmpUser->userRoles as $userRole)
                 {
-                    $userRolesArray[] = [
-                        [ "business_id" => $userRole->businessInfo->id ?? null, "business" => $userRole->businessInfo->name ?? null] ,
-                        [ "role_id" => $userRole->roleInfo->id ?? null, "role" => $userRole->roleInfo->name ?? null, "permissions" => $userRole->roleInfo->permissions ?? null ]
-                    ];
+                    $user["business"] = [ "id" => $userRole->businessInfo->id ?? null, "name" => $userRole->businessInfo->name ?? null ];
+                    $user["role"] = [ "id" => $userRole->roleInfo->id ?? null, "name" => $userRole->roleInfo->name ?? null, "permissions" => $userRole->roleInfo->permissions ?? null ];
+
+                    // Get only the first and exit this "loop"
+                    break;
                 }
 
-                $user["userRoles"] = $userRolesArray;
                 $userArray = $user->toArray();
                 unset($userArray['user_roles']);
 
