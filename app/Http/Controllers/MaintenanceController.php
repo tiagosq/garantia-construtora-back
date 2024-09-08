@@ -1016,7 +1016,7 @@ class MaintenanceController extends Controller
             $query->where('businesses.id', '=', $business);
         }
 
-        if(!empty($buildings))
+        if(!empty($building))
         {
             $query->where('buildings.id', '=', $building);
         }

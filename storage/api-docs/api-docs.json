@@ -1202,6 +1202,15 @@
                         }
                     },
                     {
+                        "name": "email",
+                        "in": "query",
+                        "description": "New business's email",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "address",
                         "in": "query",
                         "description": "New business's address",

@@ -583,6 +583,13 @@ class BusinessController extends Controller
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
+    *          description="New business's email",
+    *          in="query",
+    *          name="email",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
     *          description="New business's address",
     *          in="query",
     *          name="address",
@@ -649,14 +656,15 @@ class BusinessController extends Controller
                 'cnpj' => 'required|string|unique:businesses,cnpj',
                 'email' => 'required|email|unique:businesses,email',
                 'phone' => 'required|string|unique:businesses,phone',
-                'address' => 'nullable|string',
-                'city' => 'nullable|string',
-                'state' => 'nullable|string',
-                'zip' => 'nullable|string',
+                'address' => 'sometimes|nullable|string',
+                'city' => 'sometimes|nullable|string',
+                'state' => 'sometimes|nullable|string',
+                'zip' => 'sometimes|nullable|string',
             ]);
 
+
             if($validator->fails()){
-                return response()->json($validator->errors(), 400);
+                throw new ValidationException($validator);
             }
 
             $business = new Business();
@@ -671,12 +679,14 @@ class BusinessController extends Controller
             $business->state = (request()->has('state') ? request()->state : null);
             $business->zip = (request()->has('zip') ? request()->zip : null);
             $business->status = true;
+
             $business->save();
 
             DB::commit();
 
             $this->setAfter(json_encode(['message' => 'Successfully business created']));
             $returnMessage =  response()->json(['message' => 'Successfully business created', 'data' => $business], 201);
+
         }
         catch (UnauthorizedException $ex)
         {
