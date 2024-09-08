@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Symfony\Component\Uid\Ulid;
 
 class AuthController extends Controller
@@ -56,6 +57,13 @@ class AuthController extends Controller
     *          description="Password",
     *          in="query",
     *          name="password",
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New user password confirmation",
+    *          in="query",
+    *          name="password_confirmation",
     *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
@@ -135,9 +143,14 @@ class AuthController extends Controller
             $user->phone = request()->phone;
             $user->password = Hash::make(request()->password);
             $user->save();
-
             $role = Role::find(request()->role);
+
             $userRole = new UserRole;
+
+            if (!request()->has('business') || empty(request()->business) && !$role->management)
+            {
+                throw new InvalidArgumentException("We need a business to register this user with this role");
+            }
             $userRole->business = $role->management ? null : request()->business;
             $userRole->user = $user->id;
             $userRole->role = $role->id;
@@ -162,6 +175,12 @@ class AuthController extends Controller
             DB::rollBack();
             $this->setAfter(json_encode($ex->errors()));
             $returnMessage = response()->json(['message' => $ex->errors()], 400);
+        }
+        catch (InvalidArgumentException $ex)
+        {
+            DB::rollBack();
+            $this->setAfter(json_encode(['message' => $ex->getMessage()]));
+            $returnMessage = response()->json(['message' => $ex->getMessage()], 400);
         }
         catch (Exception $ex)
         {

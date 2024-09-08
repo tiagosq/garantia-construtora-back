@@ -2,14 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\Business;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Symfony\Component\Uid\Ulid;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Building>
  */
-class UserFactory extends Factory
+class BuildingFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,6 +20,9 @@ class UserFactory extends Factory
     public function definition(): array
     {
         $name = fake()->unique()->name();
+        $warrantyDate = fake()->date('Y-m-d', 'now');
+        $deliveredDate = fake()->date('Y-m-d', $warrantyDate);
+        $constructionDate = fake()->date('Y-m-d', $deliveredDate);
         $unwanted_array = array(    'Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
         'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U',
         'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', 'ä'=>'a', 'å'=>'a', 'æ'=>'a', 'ç'=>'c',
@@ -27,14 +31,21 @@ class UserFactory extends Factory
 
         return [
             'id' => Ulid::generate(),
-            'fullname' => $name,
-            'email' => strtr(strtolower(str_replace(' ', '.', $name)), $unwanted_array).'@garantiaconstrutora.com.br',
-            'password' => Hash::make('12345678'),
+            'name' => 'Edifício ' . $name,
+            'address' => 'Rua Henrique Meirelles, ' . fake()->unique()->randomNumber(3, true),
+            'city' => 'Torres',
+            'state' => 'RS',
+            'zip' => '95555123',
+            'manager_name' => explode(' ', fake()->unique()->name())[1],
             'phone' => fake()->unique()->e164PhoneNumber(),
+            'email' => strtr(strtolower(str_replace(' ', '.', $name)), $unwanted_array).'@garantiaconstrutora.com.br',
+            'site' => 'https://garantiaconstrutora.com.br/'.Ulid::generate(),
             'status' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'business' => Business::factory(),  // Associate Business
+            'owner' => User::factory(),  // Associate User
+            'construction_date' => $constructionDate,
+            'delivered_date' => $deliveredDate,
+            'warranty_date' => $warrantyDate,
         ];
-
     }
 }
