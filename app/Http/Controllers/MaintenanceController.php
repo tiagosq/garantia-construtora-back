@@ -505,11 +505,11 @@ class MaintenanceController extends Controller
                 request()->all()
             ) , [
                 'name' => 'required|string',
-                'description' => 'sometimes|string',
+                'description' => 'sometimes|nullable|string',
                 'start_date' => 'required|date',
                 'end_date' => 'required|date',
-                'is_completed' => 'sometimes|boolean',
-                'is_approved' => 'sometimes|boolean',
+                'is_completed' => 'sometimes|nullable|boolean',
+                'is_approved' => 'sometimes|nullable|boolean',
                 'building' => 'required|string|exists:buildings,id',
             ]);
 
@@ -675,12 +675,12 @@ class MaintenanceController extends Controller
                 request()->all()
             ) , [
                 'id' => 'required|string|exists:maintenances,id',
-                'name' => 'sometimes|string',
-                'description' => 'sometimes|string',
-                'start_date' => 'sometimes|date',
-                'end_date' => 'sometimes|date',
-                'is_completed' => 'sometimes|boolean',
-                'is_approved' => 'sometimes|boolean',
+                'name' => 'sometimes|nullable|string',
+                'description' => 'sometimes|nullable|string',
+                'start_date' => 'sometimes|nullable|date',
+                'end_date' => 'sometimes|nullable|date',
+                'is_completed' => 'sometimes|nullable|boolean',
+                'is_approved' => 'sometimes|nullable|boolean',
             ]);
 
             if ($validator->fails())
@@ -909,10 +909,10 @@ class MaintenanceController extends Controller
             $request->route()->parameters(),
             $request->all()
         ) , [
-            'limit' => 'sometimes|numeric|min:20|max:100',
-            'page' => 'sometimes|numeric|min:1',
-            'business' => 'sometimes|string|exists:businesses,id',
-            'building' => 'sometimes|string|exists:buildings,id',
+            'limit' => 'sometimes|nullable|numeric|min:20|max:100',
+            'page' => 'sometimes|nullable|numeric|min:1',
+            'business' => 'sometimes|nullable|string|exists:businesses,id',
+            'building' => 'sometimes|nullable|string|exists:buildings,id',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {

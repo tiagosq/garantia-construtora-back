@@ -805,7 +805,7 @@ class BusinessController extends Controller
                     request()->all()
                 ) , [
                 'id' => 'required|string|exists:businesses,id',
-                'name' => 'sometimes|string',
+                'name' => 'sometimes|nullable|string',
                 'cnpj' => [
                     'sometimes',
                     'string',
@@ -821,10 +821,10 @@ class BusinessController extends Controller
                     'string',
                     Rule::unique('businesses', 'phone')->ignore(request()->route()->id, 'id')
                 ],
-                'address' => 'sometimes|string',
-                'city' => 'sometimes|string',
-                'state' => 'sometimes|string',
-                'zip' => 'sometimes|string',
+                'address' => 'sometimes|nullable|string',
+                'city' => 'sometimes|nullable|string',
+                'state' => 'sometimes|nullable|string',
+                'zip' => 'sometimes|nullable|string',
             ]);
 
             if($validator->fails())
@@ -1076,8 +1076,8 @@ class BusinessController extends Controller
         ];
 
         $validator = Validator::make($request->all(), [
-            'limit' => 'sometimes|numeric|min:20|max:100',
-            'page' => 'sometimes|numeric|min:1',
+            'limit' => 'sometimes|nullable|numeric|min:20|max:100',
+            'page' => 'sometimes|nullable|numeric|min:1',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {

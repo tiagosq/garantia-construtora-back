@@ -552,16 +552,16 @@ class BuildingController extends Controller
                 'city' => 'required|string|max:50',
                 'state' => 'required|string|max:2',
                 'zip' => 'required|string|max:9',
-                'manager_name' => 'sometimes|string|max:15',
-                'phone' => 'sometimes|string|max:15',
-                'email' => 'sometimes|string|max:100',
-                'site' => 'sometimes|string|max:100',
+                'manager_name' => 'sometimes|nullable|string|max:15',
+                'phone' => 'sometimes|nullable|string|max:15',
+                'email' => 'sometimes|nullable|string|max:100',
+                'site' => 'sometimes|nullable|string|max:100',
                 'business' => 'required|string|exists:businesses,id',
                 'owner' => 'required|string|exists:users,id',
-                'status' => 'sometimes|boolean',
-                'construction_date' => 'sometimes|date',
-                'delivered_date' => 'sometimes|date',
-                'warranty_date' => 'sometimes|date',
+                'status' => 'sometimes|nullable|boolean',
+                'construction_date' => 'sometimes|nullable|date',
+                'delivered_date' => 'sometimes|nullable|date',
+                'warranty_date' => 'sometimes|nullable|date',
             ]);
 
             if($validator->fails())
@@ -768,21 +768,21 @@ class BuildingController extends Controller
                 request()->all()
             ) , [
                 'id' => 'required|string|exists:buildings,id',
-                'name' => 'sometimes|string|max:50',
-                'address' => 'sometimes|string',
-                'city' => 'sometimes|string|max:50',
-                'state' => 'sometimes|string|max:2',
-                'zip' => 'sometimes|string|max:9',
-                'manager_name' => 'sometimes|string|max:15',
-                'phone' => 'sometimes|string|max:15',
-                'email' => 'sometimes|string|max:100',
-                'site' => 'sometimes|string|max:100',
-                'business' => 'sometimes|string|exists:businesses,id',
-                'owner' => 'sometimes|string|exists:users,id',
-                'status' => 'sometimes|boolean',
-                'construction_date' => 'sometimes|date',
-                'delivered_date' => 'sometimes|date',
-                'warranty_date' => 'sometimes|date',
+                'name' => 'sometimes|nullable|string|max:50',
+                'address' => 'sometimes|nullable|string',
+                'city' => 'sometimes|nullable|string|max:50',
+                'state' => 'sometimes|nullable|string|max:2',
+                'zip' => 'sometimes|nullable|string|max:9',
+                'manager_name' => 'sometimes|nullable|string|max:15',
+                'phone' => 'sometimes|nullable|string|max:15',
+                'email' => 'sometimes|nullable|string|max:100',
+                'site' => 'sometimes|nullable|string|max:100',
+                'business' => 'sometimes|nullable|string|exists:businesses,id',
+                'owner' => 'sometimes|nullable|string|exists:users,id',
+                'status' => 'sometimes|nullable|boolean',
+                'construction_date' => 'sometimes|nullable|date',
+                'delivered_date' => 'sometimes|nullable|date',
+                'warranty_date' => 'sometimes|nullable|date',
             ]);
 
             if($validator->fails()){
@@ -1056,9 +1056,9 @@ class BuildingController extends Controller
             $request->route()->parameters(),
             $request->all()
         ) , [
-            'limit' => 'sometimes|numeric|min:20|max:100',
-            'page' => 'sometimes|numeric|min:1',
-            'business' => 'sometimes|string|exists:businesses,id',
+            'limit' => 'sometimes|nullable|numeric|min:20|max:100',
+            'page' => 'sometimes|nullable|numeric|min:1',
+            'business' => 'sometimes|nullable|string|exists:businesses,id',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {

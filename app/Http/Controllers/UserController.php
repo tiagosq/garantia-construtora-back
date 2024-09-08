@@ -322,7 +322,7 @@ class UserController extends Controller
                 request()->all()
             ) , [
                 'id' => 'required|string|exists:users,id',
-                'business' => 'sometimes|string|exists:businesses,id',
+                'business' => 'sometimes|nullable|string|exists:businesses,id',
             ]);
 
             if($validator->fails())
@@ -585,7 +585,7 @@ class UserController extends Controller
                 'phone' => 'required|unique:users',
                 'password' => 'required|confirmed|min:8',
                 'role' => 'required|exists:roles,id',
-                'business' => 'sometimes|string|exists:businesses,id'
+                'business' => 'sometimes|nullable|string|exists:businesses,id'
             ]);
 
             $validator->sometimes('business', 'required', function ($input) {
@@ -751,12 +751,12 @@ class UserController extends Controller
                 request()->all()
             ) , [
                 'id' => 'required|string|exists:users,id',
-                'fullname' => 'sometimes|string',
-                'email' => 'sometimes|email|unique:users',
-                'phone' => 'sometimes|unique:users',
-                'password' => 'sometimes|confirmed|min:8',
-                'role' => 'sometimes|exists:roles,id',
-                'business' => 'sometimes|string|exists:businesses,id'
+                'fullname' => 'sometimes|nullable|string',
+                'email' => 'sometimes|nullable|email|unique:users',
+                'phone' => 'sometimes|nullable|unique:users',
+                'password' => 'sometimes|nullable|confirmed|min:8',
+                'role' => 'sometimes|nullable|exists:roles,id',
+                'business' => 'sometimes|nullable|string|exists:businesses,id'
             ]);
 
             $validator->sometimes('business', 'required', function ($input) {
@@ -937,10 +937,10 @@ class UserController extends Controller
             $this->setBefore(json_encode(array_merge(['id' => auth()->user()->id], request()->all())));
 
             $validator = Validator::make(request()->all(), [
-                'fullname' => 'sometimes|string',
-                'email' => 'sometimes|email|unique:users',
-                'phone' => 'sometimes|unique:users',
-                'password' => 'sometimes|confirmed|min:8',
+                'fullname' => 'sometimes|nullable|string',
+                'email' => 'sometimes|nullable|email|unique:users',
+                'phone' => 'sometimes|nullable|unique:users',
+                'password' => 'sometimes|nullable|confirmed|min:8',
             ]);
 
             if($validator->fails())
@@ -1218,9 +1218,9 @@ class UserController extends Controller
             $request->route()->parameters(),
             $request->all()
         ) , [
-            'limit' => 'sometimes|numeric|min:20|max:100',
-            'page' => 'sometimes|numeric|min:1',
-            'business' => 'sometimes|string|exists:businesses,id',
+            'limit' => 'sometimes|nullable|numeric|min:20|max:100',
+            'page' => 'sometimes|nullable|numeric|min:1',
+            'business' => 'sometimes|nullable|string|exists:businesses,id',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {

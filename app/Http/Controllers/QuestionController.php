@@ -529,7 +529,7 @@ class QuestionController extends Controller
             if (!empty($requestTreated['attachments']))
             {
                 $jsonValidator = Validator::make($requestTreated, [
-                    'attachments' => 'sometimes|array',
+                    'attachments' => 'sometimes|nullable|array',
                     'attachments.*.filename' => 'required_with:attachments|string',
                     'attachments.*.content' => 'required_with:attachments|string',
                 ]);
@@ -545,7 +545,7 @@ class QuestionController extends Controller
                 'name' => 'required|string',
                 'description' => 'required|string',
                 'date' => 'required|date',
-                'status' => 'sometimes|boolean',
+                'status' => 'sometimes|nullable|boolean',
                 'observations' => 'required|string',
                 'maintenance' => 'required|string|exists:maintenances,id',
             ]);
@@ -792,7 +792,7 @@ class QuestionController extends Controller
                 $requestTreated['attachments_to_add'] = json_decode($requestTreated['attachments_to_add'], true);
 
                 $jsonValidator = Validator::make(request()->only('attachments_to_add'), [
-                    'attachments_to_add' => 'sometimes|array',
+                    'attachments_to_add' => 'sometimes|nullable|array',
                     'attachments_to_add.*.filename' => 'required_with:attachments_to_add|string',
                     'attachments_to_add.*.content' => 'required_with:attachments_to_add|string',
                 ]);
@@ -808,7 +808,7 @@ class QuestionController extends Controller
                 $requestTreated['attachments_to_remove'] = json_decode($requestTreated['attachments_to_remove'], true);
 
                 $jsonValidator = Validator::make(request()->only('attachments_to_remove'), [
-                    'attachments_to_remove' => 'sometimes|array',
+                    'attachments_to_remove' => 'sometimes|nullable|array',
                     'attachments_to_remove.*.filename' => 'required_with:attachments_to_remove|string',
                 ]);
 
@@ -822,12 +822,12 @@ class QuestionController extends Controller
             // Question validator
             $questionValidator = Validator::make($requestTreated, [
                 'id' => 'required|string|exists:questions,id',
-                'name' => 'sometimes|string',
-                'description' => 'sometimes|string',
-                'date' => 'sometimes|date',
-                'status' => 'sometimes|boolean',
-                'observations' => 'sometimes|string',
-                'maintenance' => 'sometimes|string|exists:maintenances,id',
+                'name' => 'sometimes|nullable|string',
+                'description' => 'sometimes|nullable|string',
+                'date' => 'sometimes|nullable|date',
+                'status' => 'sometimes|nullable|boolean',
+                'observations' => 'sometimes|nullable|string',
+                'maintenance' => 'sometimes|nullable|string|exists:maintenances,id',
             ]);
 
             if ($questionValidator->fails())
@@ -1099,10 +1099,10 @@ class QuestionController extends Controller
             $request->route()->parameters(),
             $request->all()
         ) , [
-            'limit' => 'sometimes|numeric|min:20|max:100',
-            'page' => 'sometimes|numeric|min:1',
-            'business' => 'sometimes|string|exists:businesses,id',
-            'maintenance' => 'sometimes|string|exists:maintenances,id',
+            'limit' => 'sometimes|nullable|numeric|min:20|max:100',
+            'page' => 'sometimes|nullable|numeric|min:1',
+            'business' => 'sometimes|nullable|string|exists:businesses,id',
+            'maintenance' => 'sometimes|nullable|string|exists:maintenances,id',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
