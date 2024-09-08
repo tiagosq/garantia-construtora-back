@@ -352,16 +352,25 @@ class UserController extends Controller
             $query->where('users.id', '=', request()->id);
             $user = $query->first();
 
-            if (!empty($user))
+            $tmpUser = $user;
+
+            $user["business"] = [ "id" => null, "name" => null ];
+            $user["role"] = [ "id" => null, "name" => null, "permissions" =>  null ];
+
+            foreach ($tmpUser->userRoles as $userRole)
             {
-                $this->setAfter(json_encode(['message' => 'Showing user ' . $user->email]));
-                $returnMessage =  response()->json(['message' => 'Showing user ' . $user->email, 'data' => $user]);
+                $user["business"] = [ "id" => $userRole->businessInfo->id ?? null, "name" => $userRole->businessInfo->name ?? null ];
+                $user["role"] = [ "id" => $userRole->roleInfo->id ?? null, "name" => $userRole->roleInfo->name ?? null, "permissions" => $userRole->roleInfo->permissions ?? null ];
+
+                // Get only the first and exit this "loop"
+                break;
             }
-            else
-            {
-                $this->setAfter(json_encode(['message' => 'User ' . request()->route()->id . ' not present in this business.']));
-                $returnMessage =  response()->json(['message' => 'User ' . request()->route()->id . ' not present in this business.']);
-            }
+
+            $userArray = $user->toArray();
+            unset($userArray['user_roles']);
+
+            $this->setAfter(json_encode(['message' => 'Showing user ' . $user->email]));
+            $returnMessage =  response()->json(['message' => 'Showing user ' . $user->email, 'data' => $userArray]);
         }
         catch (UnauthorizedException $ex)
         {
