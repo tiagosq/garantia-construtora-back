@@ -29,7 +29,7 @@ abstract class Controller
 
         $userRole = null;
 
-        if (!isNull($business))
+        if (!is_null($business))
         {
             $userRoleWhereParams[] = ['business', '=', $business];
             $userRole = UserRole::where($userRoleWhereParams)->first();
