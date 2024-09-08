@@ -523,7 +523,14 @@ class UserController extends Controller
     *          description="New user's password (unhashed, will be realized on save at database)",
     *          in="query",
     *          name="password",
-    *          required=false,
+    *          required=true,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New user password confirmation",
+    *          in="query",
+    *          name="password_confirmation",
+    *          required=true,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -578,7 +585,7 @@ class UserController extends Controller
                 'phone' => 'required|unique:users',
                 'password' => 'required|confirmed|min:8',
                 'role' => 'required|exists:roles,id',
-                'business' => 'nullable|string|exists:businesses,id'
+                'business' => 'sometimes|string|exists:businesses,id'
             ]);
 
             $validator->sometimes('business', 'required', function ($input) {
@@ -660,21 +667,21 @@ class UserController extends Controller
     *          description="New user's full name",
     *          in="query",
     *          name="fullname",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New user's email (unique on system)",
     *          in="query",
     *          name="email",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New user's phone (unique on system)",
     *          in="query",
     *          name="phone",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -685,10 +692,17 @@ class UserController extends Controller
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
+    *          description="New user password confirmation",
+    *          in="query",
+    *          name="password_confirmation",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
     *          description="New user's role ID",
     *          in="query",
     *          name="role",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -782,7 +796,8 @@ class UserController extends Controller
                     throw new UnauthorizedException('User don\'t have permission to associate this role to another user');
                 }
 
-                $userRole = $user->userRoles->where('business', '=', (!empty(request()->business) ? request()->business : null));
+                $tmpUser = $user;
+                $userRole = $tmpUser->userRoles->where('business', '=', (!empty(request()->business) ? request()->business : null))->first();
 
                 if (empty($userRole))
                 {
@@ -793,17 +808,33 @@ class UserController extends Controller
                 $userRole->user = $user->id;
                 $userRole->role = request()->role;
                 $userRole->save();
+
+
+                $user["business"] = [ "id" => null, "name" => null ];
+                $user["role"] = [ "id" => null, "name" => null, "permissions" =>  null ];
+
+                foreach ($tmpUser->userRoles as $userRole)
+                {
+                    $user["business"] = [ "id" => $userRole->businessInfo->id ?? null, "name" => $userRole->businessInfo->name ?? null ];
+                    $user["role"] = [ "id" => $userRole->roleInfo->id ?? null, "name" => $userRole->roleInfo->name ?? null, "permissions" => $userRole->roleInfo->permissions ?? null ];
+
+                    // Get only the first and exit this "loop"
+                    break;
+                }
+
+                $userArray = $user->toArray();
+                unset($userArray['user_roles']);
             }
 
             DB::commit();
 
             $this->setAfter(json_encode([
                 'message' => 'Successfully user updated!',
-                'data' => $user,
+                'data' => $userArray,
             ]));
             $returnMessage = response()->json([
                 'message' => 'Successfully user updated!',
-                'data' => $user,
+                'data' => $userArray,
             ], 201);
         }
         catch (UnauthorizedException $ex)
@@ -842,27 +873,34 @@ class UserController extends Controller
     *          description="New user's full name",
     *          in="query",
     *          name="fullname",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New user's email (unique on system)",
     *          in="query",
     *          name="email",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New user's phone (unique on system)",
     *          in="query",
     *          name="phone",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
     *          description="New user's password (unhashed, will be realized on save at database)",
     *          in="query",
     *          name="password",
+    *          required=false,
+    *          @OA\Schema(type="string"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New user password confirmation",
+    *          in="query",
+    *          name="password_confirmation",
     *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
@@ -1275,7 +1313,11 @@ class UserController extends Controller
 
         $query->leftJoin('user_roles', 'user_roles.user', '=', 'users.id');
         $query->leftJoin('roles', 'roles.id', '=', 'user_roles.role');
-        $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
+
+        if(!empty($business))
+        {
+            $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
+        }
 
         foreach ($columnsToSearch as $column => $whereInfo)
         {

@@ -48,7 +48,7 @@ class QuestionController extends Controller
     *          description="Maintenance's ID",
     *          in="query",
     *          name="maintenance",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -151,7 +151,7 @@ class QuestionController extends Controller
     *          description="Maintenance's ID",
     *          in="query",
     *          name="maintenance",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -1166,7 +1166,7 @@ class QuestionController extends Controller
         }
 
         $business = ($request->has('business') ? $request->only('business')['business'] : null);
-        $maintenance = $request->only('maintenance')['maintenance'];
+        $maintenance = ($request->has('maintenance') ? $request->only('maintenance')['maintenance'] : null);
 
         $query = Question::query();
         $query->select([

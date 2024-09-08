@@ -535,6 +535,36 @@
                         "schema": {
                             "type": "boolean"
                         }
+                    },
+                    {
+                        "name": "construction_date",
+                        "in": "query",
+                        "description": "New building's construction date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "delivered_date",
+                        "in": "query",
+                        "description": "New building's delivered date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "warranty_date",
+                        "in": "query",
+                        "description": "New building's warranty date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
                     }
                 ],
                 "responses": {
@@ -709,6 +739,36 @@
                         "required": false,
                         "schema": {
                             "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "construction_date",
+                        "in": "query",
+                        "description": "New building's construction date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "delivered_date",
+                        "in": "query",
+                        "description": "New building's delivered date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "warranty_date",
+                        "in": "query",
+                        "description": "New building's warranty date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
                         }
                     }
                 ],
@@ -1346,7 +1406,7 @@
                         "name": "building",
                         "in": "query",
                         "description": "Building's ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -1413,7 +1473,7 @@
                         "name": "building",
                         "in": "query",
                         "description": "Building's ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -1781,7 +1841,7 @@
                         "name": "maintenance",
                         "in": "query",
                         "description": "Maintenance's ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -1848,7 +1908,7 @@
                         "name": "maintenance",
                         "in": "query",
                         "description": "Maintenance's ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2814,7 +2874,7 @@
                         "name": "fullname",
                         "in": "query",
                         "description": "New user's full name",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2823,7 +2883,7 @@
                         "name": "email",
                         "in": "query",
                         "description": "New user's email (unique on system)",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2832,7 +2892,7 @@
                         "name": "phone",
                         "in": "query",
                         "description": "New user's phone (unique on system)",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2847,10 +2907,19 @@
                         }
                     },
                     {
+                        "name": "password_confirmation",
+                        "in": "query",
+                        "description": "New user password confirmation",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "role",
                         "in": "query",
                         "description": "New user's role ID",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2961,7 +3030,7 @@
                         "name": "fullname",
                         "in": "query",
                         "description": "New user's full name",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2970,7 +3039,7 @@
                         "name": "email",
                         "in": "query",
                         "description": "New user's email (unique on system)",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2979,7 +3048,7 @@
                         "name": "phone",
                         "in": "query",
                         "description": "New user's phone (unique on system)",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "string"
                         }
@@ -2988,6 +3057,15 @@
                         "name": "password",
                         "in": "query",
                         "description": "New user's password (unhashed, will be realized on save at database)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password_confirmation",
+                        "in": "query",
+                        "description": "New user password confirmation",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -3080,7 +3158,16 @@
                         "name": "password",
                         "in": "query",
                         "description": "New user's password (unhashed, will be realized on save at database)",
-                        "required": false,
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "password_confirmation",
+                        "in": "query",
+                        "description": "New user password confirmation",
+                        "required": true,
                         "schema": {
                             "type": "string"
                         }

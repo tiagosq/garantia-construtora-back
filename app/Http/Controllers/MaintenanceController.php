@@ -47,7 +47,7 @@ class MaintenanceController extends Controller
     *          description="Building's ID",
     *          in="query",
     *          name="building",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -149,7 +149,7 @@ class MaintenanceController extends Controller
     *          description="Building's ID",
     *          in="query",
     *          name="building",
-    *          required=true,
+    *          required=false,
     *          @OA\Schema(type="string"),
     *      ),
     *      @OA\Parameter(
@@ -912,7 +912,7 @@ class MaintenanceController extends Controller
             'limit' => 'sometimes|numeric|min:20|max:100',
             'page' => 'sometimes|numeric|min:1',
             'business' => 'sometimes|string|exists:businesses,id',
-            'building' => 'required|string|exists:buildings,id',
+            'building' => 'sometimes|string|exists:buildings,id',
             // 'dbColumnName-order' => 'asc|desc'
             // 'dbColumnName-search' => 'first_any_string|optional_second_any_string'
             '*' => function ($attribute, $value, $fail) use ($defaultKeys, &$columnsToOrder, &$columnsToSearch, $columnsOperationSearch) {
@@ -976,7 +976,7 @@ class MaintenanceController extends Controller
         }
 
         $business = ($request->has('business') ? $request->business : null);
-        $building = $request->building;
+        $building = ($request->has('building') ? $request->building : null);
 
         $query = Maintenance::query();
 
@@ -1016,7 +1016,10 @@ class MaintenanceController extends Controller
             $query->where('businesses.id', '=', $business);
         }
 
-        $query->where('buildings.id', '=', $building);
+        if(!empty($buildings))
+        {
+            $query->where('buildings.id', '=', $building);
+        }
 
         foreach ($columnsToSearch as $column => $whereInfo)
         {

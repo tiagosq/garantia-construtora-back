@@ -213,6 +213,9 @@ class BuildingController extends Controller
                 'Negócio',
                 'Prédio criado em',
                 'Prédio atualizado em',
+                'Construção iniciada em',
+                'Entregue em',
+                'Garantia até',
             ]);
 
             foreach ($buildings as $building)
@@ -232,6 +235,9 @@ class BuildingController extends Controller
                     $building->business,
                     $building->created_at,
                     $building->updated_at,
+                    $building->construction_date,
+                    $building->delivered_date,
+                    $building->warranty_date,
                 ]);
             }
 
@@ -484,6 +490,27 @@ class BuildingController extends Controller
     *          required=false,
     *          @OA\Schema(type="boolean"),
     *      ),
+    *      @OA\Parameter(
+    *          description="New building's construction date",
+    *          in="query",
+    *          name="construction_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New building's delivered date",
+    *          in="query",
+    *          name="delivered_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New building's warranty date",
+    *          in="query",
+    *          name="warranty_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Show building created info",
@@ -532,6 +559,9 @@ class BuildingController extends Controller
                 'business' => 'required|string|exists:businesses,id',
                 'owner' => 'required|string|exists:users,id',
                 'status' => 'sometimes|boolean',
+                'construction_date' => 'sometimes|date',
+                'delivered_date' => 'sometimes|date',
+                'warranty_date' => 'sometimes|date',
             ]);
 
             if($validator->fails())
@@ -553,6 +583,9 @@ class BuildingController extends Controller
             $building->email = (request()->has('email') ? request()->email : null);
             $building->site = (request()->has('site') ? request()->site : null);
             $building->business = (request()->has('business') ? request()->business : null);
+            $building->construction_date = (request()->has('construction_date') ? request()->construction_date : null);
+            $building->delivered_date = (request()->has('delivered_date') ? request()->delivered_date : null);
+            $building->warranty_date = (request()->has('warranty_date') ? request()->warranty_date : null);
             $building->save();
 
             DB::commit();
@@ -675,6 +708,27 @@ class BuildingController extends Controller
     *          required=false,
     *          @OA\Schema(type="boolean"),
     *      ),
+    *      @OA\Parameter(
+    *          description="New building's construction date",
+    *          in="query",
+    *          name="construction_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New building's delivered date",
+    *          in="query",
+    *          name="delivered_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
+    *      @OA\Parameter(
+    *          description="New building's warranty date",
+    *          in="query",
+    *          name="warranty_date",
+    *          required=false,
+    *          @OA\Schema(type="string",format="date"),
+    *      ),
     *      @OA\Response(
     *          response=200,
     *          description="Show building updated info",
@@ -726,6 +780,9 @@ class BuildingController extends Controller
                 'business' => 'sometimes|string|exists:businesses,id',
                 'owner' => 'sometimes|string|exists:users,id',
                 'status' => 'sometimes|boolean',
+                'construction_date' => 'sometimes|date',
+                'delivered_date' => 'sometimes|date',
+                'warranty_date' => 'sometimes|date',
             ]);
 
             if($validator->fails()){
@@ -781,6 +838,18 @@ class BuildingController extends Controller
             if (request()->has('status'))
             {
                 $building->status = request()->status;
+            }
+            if (request()->has('construction_date'))
+            {
+                $building->construction_date = request()->construction_date;
+            }
+            if (request()->has('delivered_date'))
+            {
+                $building->delivered_date = request()->delivered_date;
+            }
+            if (request()->has('warranty_date'))
+            {
+                $building->warranty_date = request()->warranty_date;
             }
 
             $building->save();
@@ -977,6 +1046,9 @@ class BuildingController extends Controller
             'BETWEEN' => [
                 'created_at',
                 'updated_at',
+                'construction_date',
+                'delivered_date',
+                'warranty_date',
             ],
         ];
 
@@ -999,7 +1071,7 @@ class BuildingController extends Controller
                             $columnName = str_replace($suffix, '', $attribute);
                             $operationType = substr($suffix, 1);
 
-                            if (!Schema::hasColumn('questions', $columnName))
+                            if (!Schema::hasColumn('buildings', $columnName))
                             {
                                 $fail('[validation.column]');
                             }
@@ -1067,6 +1139,9 @@ class BuildingController extends Controller
             'users.fullname as owner',
             'businesses.name as business',
             'buildings.created_at as created_at',
+            'buildings.construction_date as construction_date',
+            'buildings.delivered_date as delivered_date',
+            'buildings.warranty_date as warranty_date',
             'buildings.updated_at as updated_at',
         ]);
 

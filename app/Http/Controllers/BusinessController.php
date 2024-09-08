@@ -1090,7 +1090,7 @@ class BusinessController extends Controller
                             $columnName = str_replace($suffix, '', $attribute);
                             $operationType = substr($suffix, 1);
 
-                            if (!Schema::hasColumn('logs', $columnName))
+                            if (!Schema::hasColumn('businesses', $columnName))
                             {
                                 $fail('[validation.column]');
                             }
@@ -1142,6 +1142,7 @@ class BusinessController extends Controller
 
         $query = Business::query();
         $query->select([
+            'businesses.id as id',
             'businesses.name as name',
             'businesses.cnpj as cnpj',
             'businesses.email as email',

@@ -26,6 +26,9 @@ class Building extends Model
         'status',
         'business',
         'owner',
+        'construction_date',
+        'delivered_date',
+        'warranty_date',
     ];
 
     protected $casts = [

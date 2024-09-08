@@ -319,10 +319,20 @@ class RoleController extends Controller {
             }
 
             $query = Role::query();
+            $query->select([
+                'roles.id as id',
+                'roles.name as name',
+                'roles.permissions as permissions',
+                'roles.status as status',
+                'roles.management as management',
+                'roles.created_at as created_at',
+                'roles.updated_at as updated_at'
+            ]);
+
             $business = (request()->has('business') ? request()->business : null);
 
             $query->where('roles.id', '=', request()->id);
-            $query->where('roles.management', '=', !$business);
+            //$query->where('roles.management', '=', !$business);
 
             $role = $query->first();
 
