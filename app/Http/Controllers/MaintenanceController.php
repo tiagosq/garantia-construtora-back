@@ -366,7 +366,7 @@ class MaintenanceController extends Controller
                 'maintenances.is_completed as is_completed',
                 'maintenances.is_approved as is_approved',
                 'buildings.name as building',
-                'businesses.name as business',
+                'businesses.id as business',
                 'users.fullname as user',
                 'maintenances.created_at as created_at',
                 'maintenances.updated_at as updated_at',
@@ -788,10 +788,10 @@ class MaintenanceController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('maintenance', 'delete', (request()->has('business') ? request()->business : null)))
-            {
-                throw new UnauthorizedException('Unauthorized');
-            }
+            // if (!$this->checkUserPermission('maintenance', 'delete', (request()->has('business') ? request()->business : null)))
+            // {
+            //     throw new UnauthorizedException('Unauthorized');
+            // }
 
             $validator = Validator::make(array_merge(
                 request()->route()->parameters(),
@@ -990,7 +990,7 @@ class MaintenanceController extends Controller
             'maintenances.is_approved as is_approved',
             'buildings.name as building',
             'users.fullname as user',
-            'businesses.name as business',
+            'businesses.id as business',
             'maintenances.created_at as created_at',
             'maintenances.updated_at as updated_at',
         ]);

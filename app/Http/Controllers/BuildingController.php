@@ -362,6 +362,9 @@ class BuildingController extends Controller
                 'buildings.email as email',
                 'buildings.site as site',
                 'buildings.status as status',
+                'buildings.construction_date as construction_date',
+                'buildings.delivered_date as delivered_date',
+                'buildings.warranty_date as warranty_date',
                 'users.fullname as owner',
                 'businesses.name as business',
                 'buildings.created_at as created_at',
@@ -763,32 +766,6 @@ class BuildingController extends Controller
                 throw new UnauthorizedException('Unauthorized');
             }
 
-            $validator = Validator::make(array_merge(
-                request()->route()->parameters(),
-                request()->all()
-            ) , [
-                'id' => 'required|string|exists:buildings,id',
-                'name' => 'sometimes|nullable|string|max:50',
-                'address' => 'sometimes|nullable|string',
-                'city' => 'sometimes|nullable|string|max:50',
-                'state' => 'sometimes|nullable|string|max:2',
-                'zip' => 'sometimes|nullable|string|max:9',
-                'manager_name' => 'sometimes|nullable|string|max:15',
-                'phone' => 'sometimes|nullable|string|max:15',
-                'email' => 'sometimes|nullable|string|max:100',
-                'site' => 'sometimes|nullable|string|max:100',
-                'business' => 'sometimes|nullable|string|exists:businesses,id',
-                'owner' => 'sometimes|nullable|string|exists:users,id',
-                'status' => 'sometimes|nullable|boolean',
-                'construction_date' => 'sometimes|nullable|date',
-                'delivered_date' => 'sometimes|nullable|date',
-                'warranty_date' => 'sometimes|nullable|date',
-            ]);
-
-            if($validator->fails()){
-                return response()->json($validator->errors(), 400);
-            }
-
             $building = Building::find(request()->route()->parameter('id'));
 
             if (request()->has('name'))
@@ -927,10 +904,10 @@ class BuildingController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('building', 'delete', (request()->has('business') ? request()->business : null)))
-            {
-                throw new UnauthorizedException('Unauthorized');
-            }
+            // if (!$this->checkUserPermission('building', 'delete', (request()->has('business') ? request()->business : null)))
+            // {
+            //     throw new UnauthorizedException('Unauthorized');
+            // }
 
             $validator = Validator::make(array_merge(
                 request()->route()->parameters(),
@@ -1137,7 +1114,7 @@ class BuildingController extends Controller
             'buildings.site as site',
             'buildings.status as status',
             'users.fullname as owner',
-            'businesses.name as business',
+            'businesses.id as business',
             'buildings.created_at as created_at',
             'buildings.construction_date as construction_date',
             'buildings.delivered_date as delivered_date',

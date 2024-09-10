@@ -546,7 +546,7 @@ class QuestionController extends Controller
                 'description' => 'required|string',
                 'date' => 'required|date',
                 'status' => 'sometimes|nullable|boolean',
-                'observations' => 'required|string',
+                'observations' => 'sometimes|nullable|string',
                 'maintenance' => 'required|string|exists:maintenances,id',
             ]);
 

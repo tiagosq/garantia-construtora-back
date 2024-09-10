@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('description');
             $table->date('date');
             $table->boolean('status')->default(false);
-            $table->string('observations');
+            $table->string('observations')->nullable();
             $table->ulid('maintenance');
             $table->foreign('maintenance')->references('id')->on('maintenances');
             $table->timestamps();
