@@ -771,53 +771,11 @@ class QuestionController extends Controller
 
             DB::beginTransaction();
 
-            if (!$this->checkUserPermission('question', 'update', (request()->has('business') ? request()->business : null)))
-            {
-                throw new UnauthorizedException('Unauthorized');
-            }
-
-            if ((request()->has('attachments_to_add') || request()->has('attachments_to_remove')) && !$this->checkUserPermission('attachment', 'update', (request()->has('business') ? request()->business : null)))
-            {
-                throw new UnauthorizedException('Unauthorized');
-            }
-
             $errorBag = new MessageBag();
             $requestTreated = array_merge(
                 request()->route()->parameters(),
                 request()->all()
             );
-
-            if (!empty($requestTreated['attachments_to_add']))
-            {
-                $requestTreated['attachments_to_add'] = json_decode($requestTreated['attachments_to_add'], true);
-
-                $jsonValidator = Validator::make(request()->only('attachments_to_add'), [
-                    'attachments_to_add' => 'sometimes|nullable|array',
-                    'attachments_to_add.*.filename' => 'required_with:attachments_to_add|string',
-                    'attachments_to_add.*.content' => 'required_with:attachments_to_add|string',
-                ]);
-
-                if ($jsonValidator->fails())
-                {
-                    $errorBag->merge($jsonValidator->errors());
-                }
-            }
-
-            if (!empty($requestTreated['attachments_to_remove']))
-            {
-                $requestTreated['attachments_to_remove'] = json_decode($requestTreated['attachments_to_remove'], true);
-
-                $jsonValidator = Validator::make(request()->only('attachments_to_remove'), [
-                    'attachments_to_remove' => 'sometimes|nullable|array',
-                    'attachments_to_remove.*.filename' => 'required_with:attachments_to_remove|string',
-                ]);
-
-                if ($jsonValidator->fails())
-                {
-                    $errorBag->merge($jsonValidator->errors());
-                }
-            }
-
 
             // Question validator
             $questionValidator = Validator::make($requestTreated, [
@@ -871,48 +829,24 @@ class QuestionController extends Controller
 
             $question->save();
 
-            if (!empty($requestTreated['attachments_to_add']))
-            {
-                // Access related models to do the attachments path
-                $maintenance = $question->maintenanceBelongs;
-                $building = $maintenance->buildingBelongs;
-                $business = $building->businessBelongs;
-
-                $pathSplitted = [
-                    $business->id,
-                    $building->id,
-                    $maintenance->id,
-                    $question->id,
-                ];
-
-                $filesSavedOnStorage = [];
-
-                foreach ($requestTreated['attachments_to_add'] as &$file)
-                {
-                    $attachmentInfo = $this->saveAttachment($file['content'], $pathSplitted, $file['filename']);
+            // Anexos
+            if (request()->has('attachments_to_add')) {
+                $attachments = request()->file('attachments_to_add');
+                foreach ($attachments as $file) {
+                    // Fazer o upload do arquivo para o storage
+                    $path = $file->store($requestTreated['business'].'/'.$requestTreated['maintenance'].'/'.$question->id, 'public');
 
                     $attachment = new AttachmentModel();
-                    $attachment->name = $attachmentInfo['filename'];
-                    $attachment->path = $attachmentInfo['path'];
-                    $attachment->type = $attachmentInfo['mimetype'];
-                    $attachment->size = $attachmentInfo['size'];
-                    $attachment->url = $attachmentInfo['url'];
+                    $attachment->id = Ulid::generate();
+                    $attachment->name = $file->getClientOriginalName();
+                    $attachment->path = $path;
+                    $attachment->url = Storage::url($path);
+                    $attachment->type = $file->getClientMimeType();
+                    $attachment->size = $file->getSize();
                     $attachment->question = $question->id;
                     $attachment->user = auth()->user()->id;
                     $attachment->status = true;
                     $attachment->save();
-
-                    $filesSavedOnStorage[] = $attachmentInfo['filename'];
-                }
-
-                // Loop to remove files when user setted to exclude
-                foreach ($requestTreated['attachments_to_remove'] as &$file)
-                {
-                    if ($this->deleteAttachment($pathSplitted, $file['filename']))
-                    {
-                        $attachment = AttachmentModel::where('name', '=', $file['filename']);
-                        $attachment->delete();
-                    }
                 }
             }
 
@@ -1182,6 +1116,9 @@ class QuestionController extends Controller
             'questions.created_at as created_at',
             'questions.updated_at as updated_at',
         ]);
+    
+        // Adicionar anexos
+        $query->with('attachments');
 
         if (!empty($columnsToOrder))
         {
