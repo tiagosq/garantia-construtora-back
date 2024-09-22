@@ -10,6 +10,7 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\File;
 
 Route::group([
     'middleware' => 'api',
@@ -128,6 +129,19 @@ Route::group([
     Route::get('/{id}', [UserController::class, 'show'])->middleware('auth:api')->name('users.show');
     Route::put('/{id}', [UserController::class, 'update'])->middleware('auth:api')->name('users.update');
     Route::delete('/{id}', [UserController::class, 'destroy'])->middleware('auth:api')->name('users.destroy');
+});
+
+Route::group([
+    'middleware' => 'api',
+    'prefix' => 'attachment'
+], function ($router) {
+    Route::get('/{business}/{building}/{maintenance}/{filename}', function ($business, $building, $maintenance, $filename) {
+        $filePath = storage_path("app/public/{$business}/{$building}/{$maintenance}/{$filename}");
+        if (File::exists($filePath)) {
+            return response()->file($filePath);
+        }
+        return response()->json(['error' => 'File not found.', 'file' => $filePath], 404);
+    });
 });
 
 Route::fallback(function(){
