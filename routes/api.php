@@ -65,6 +65,7 @@ Route::group([
     'prefix' => 'logs'
 ], function ($router) {
     Route::get('/', [LogController::class, 'index'])->middleware('auth:api')->name('logs.index');
+    Route::get('/export', [LogController::class, 'export'])->middleware('auth:api')->name('logs.export');
 });
 
 Route::group([
@@ -136,10 +137,13 @@ Route::group([
     'prefix' => 'attachment'
 ], function ($router) {
     Route::get('/{business}/{building}/{maintenance}/{filename}', function ($business, $building, $maintenance, $filename) {
+        $this->initLog(request());
         $filePath = storage_path("app/public/{$business}/{$building}/{$maintenance}/{$filename}");
         if (File::exists($filePath)) {
+            $this->saveLog();
             return response()->file($filePath);
         }
+        $this->saveLog();
         return response()->json(['error' => 'File not found.', 'file' => $filePath], 404);
     });
 });

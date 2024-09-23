@@ -1042,6 +1042,12 @@ class MaintenanceController extends Controller
             {
                 foreach ($whereInfo['values'] as $value)
                 {
+                    if($column == 'name') {
+                        $column = 'maintenances.name';
+                    }
+                    if($column == 'building') {
+                        $column = 'buildings.name';
+                    }
                     $query->where($column, 'LIKE', '%'.$value.'%');
                 }
             }

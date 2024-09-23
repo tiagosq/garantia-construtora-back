@@ -397,7 +397,7 @@ class LogController extends Controller
 
         $query->leftJoin('user_roles', 'user_roles.user', '=', 'logs.user');
         $query->leftJoin('users', 'users.id', '=', 'logs.user');
-        $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
+        // $query->where('user_roles.business', '=', (!empty($business) ? $business : null));
 
         foreach ($columnsToSearch as $column => $whereInfo)
         {
