@@ -10,7 +10,10 @@ use App\Http\Controllers\LogController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AttachmentController;
 use Illuminate\Support\Facades\File;
+use App\Trait\Attachment;
+use App\Trait\Log;
 
 Route::group([
     'middleware' => 'api',
@@ -136,16 +139,7 @@ Route::group([
     'middleware' => 'api',
     'prefix' => 'attachment'
 ], function ($router) {
-    Route::get('/{business}/{building}/{maintenance}/{filename}', function ($business, $building, $maintenance, $filename) {
-        $this->initLog(request());
-        $filePath = storage_path("app/public/{$business}/{$building}/{$maintenance}/{$filename}");
-        if (File::exists($filePath)) {
-            $this->saveLog();
-            return response()->file($filePath);
-        }
-        $this->saveLog();
-        return response()->json(['error' => 'File not found.', 'file' => $filePath], 404);
-    });
+    Route::get('/{business}/{building}/{maintenance}/{filename}', [AttachmentController::class, 'view']);
 });
 
 Route::fallback(function(){

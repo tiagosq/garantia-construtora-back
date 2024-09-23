@@ -1008,7 +1008,7 @@ class BuildingController extends Controller
                 'status',
             ],
             'LIKE' => [
-                'building_name',
+                'name',
                 'address',
                 'city',
                 'state',
@@ -1048,7 +1048,7 @@ class BuildingController extends Controller
                             $columnName = str_replace($suffix, '', $attribute);
                             $operationType = substr($suffix, 1);
 
-                            if (!Schema::hasColumn('buildings', $columnName) && $columnName != 'building_name')
+                            if (!Schema::hasColumn('buildings', $columnName))
                             {
                                 $fail('[validation.column]');
                             }
@@ -1103,7 +1103,7 @@ class BuildingController extends Controller
         $query = Building::query();
         $query->select([
             'buildings.id as id',
-            'buildings.name as building_name',
+            'buildings.name as name',
             'buildings.address as address',
             'buildings.city as city',
             'buildings.state as state',
@@ -1131,7 +1131,7 @@ class BuildingController extends Controller
         }
         else
         {
-            $query->orderBy('building_name', 'desc');
+            $query->orderBy('buildings.name', 'desc');
         }
 
         $query->leftJoin('businesses', 'businesses.id', '=', 'buildings.business');
@@ -1162,7 +1162,7 @@ class BuildingController extends Controller
             {
                 foreach ($whereInfo['values'] as $value)
                 {
-                    if($column == 'building_name') {
+                    if($column == 'name') {
                         $column = 'buildings.name';
                     }
                     $query->where($column, 'LIKE', '%'.$value.'%');
