@@ -375,6 +375,7 @@ class QuestionController extends Controller
 
             $query->select([
                 'attachments.name as name',
+                'attachments.category as category',
                 'attachments.type as type',
                 'attachments.size as size',
                 'attachments.url as url',
@@ -525,21 +526,6 @@ class QuestionController extends Controller
                 request()->all()
             );
 
-            // Attachment validator
-            if (!empty($requestTreated['attachments']))
-            {
-                $jsonValidator = Validator::make($requestTreated, [
-                    'attachments' => 'sometimes|nullable|array',
-                    'attachments.*.filename' => 'required_with:attachments|string',
-                    'attachments.*.content' => 'required_with:attachments|string',
-                ]);
-
-                if ($jsonValidator->fails())
-                {
-                    $errorBag->merge($jsonValidator->errors());
-                }
-            }
-
             // Question validator
             $questionValidator = Validator::make($requestTreated, [
                 'name' => 'required|string',
@@ -574,44 +560,6 @@ class QuestionController extends Controller
             $question->observations = $requestTreated['observations'];
             $question->maintenance = $requestTreated['maintenance'];
             $question->save();
-
-
-            if (!empty($requestTreated['attachments']))
-            {
-                // Access related models to do the attachments path
-                $maintenance = $question->maintenanceBelongs;
-                $building = $maintenance->buildingBelongs;
-                $business = $building->businessBelongs;
-
-                $pathSplitted = [
-                    $business->id,
-                    $building->id,
-                    $maintenance->id,
-                    $question->id,
-                ];
-
-                $filesSavedOnStorage = [];
-
-
-                foreach ($requestTreated['attachments'] as &$file)
-                {
-                    $attachmentInfo = $this->saveAttachment($file['content'], $pathSplitted, $file['filename']);
-
-                    $attachment = new AttachmentModel();
-                    $attachment->id = $attachmentInfo['id'];
-                    $attachment->name = $attachmentInfo['filename'];
-                    $attachment->path = $attachmentInfo['path'];
-                    $attachment->type = $attachmentInfo['mimetype'];
-                    $attachment->size = $attachmentInfo['size'];
-                    $attachment->url = $attachmentInfo['url'];
-                    $attachment->question = $question->id;
-                    $attachment->user = auth()->user()->id;
-                    $attachment->status = true;
-                    $attachment->save();
-
-                    $filesSavedOnStorage[] = $attachmentInfo['filename'];
-                }
-            }
 
             DB::commit();
 
@@ -783,7 +731,7 @@ class QuestionController extends Controller
                 'name' => 'sometimes|nullable|string',
                 'description' => 'sometimes|nullable|string',
                 'date' => 'sometimes|nullable|date',
-                'status' => 'sometimes|nullable|boolean',
+                'status' => 'sometimes|nullable|numeric',
                 'observations' => 'sometimes|nullable|string',
                 'maintenance' => 'sometimes|nullable|string|exists:maintenances,id',
             ]);
@@ -828,17 +776,17 @@ class QuestionController extends Controller
             }
 
             $question->save();
-
+            
             // Anexos
-            if (request()->has('attachments_to_add')) {
-                $attachments = request()->file('attachments_to_add');
+            if (request()->has('fiscal') && count(request()->file('fiscal')) > 0){
+                $attachments = request()->file('fiscal');
                 foreach ($attachments as $file) {
                     // Fazer o upload do arquivo para o storage
                     $path = $file->store($requestTreated['business'].'/'.$requestTreated['maintenance'].'/'.$question->id, 'public');
-
                     $attachment = new AttachmentModel();
                     $attachment->id = Ulid::generate();
                     $attachment->name = $file->getClientOriginalName();
+                    $attachment->category = 'fiscal';
                     $attachment->path = $path;
                     $attachment->url = Storage::url($path);
                     $attachment->type = $file->getClientMimeType();
@@ -847,6 +795,55 @@ class QuestionController extends Controller
                     $attachment->user = auth()->user()->id;
                     $attachment->status = true;
                     $attachment->save();
+                }
+            }
+
+            if (request()->has('video') && count(request()->file('video')) > 0){
+                $attachments = request()->file('video');
+                foreach ($attachments as $file) {
+                    // Fazer o upload do arquivo para o storage
+                    $path = $file->store($requestTreated['business'].'/'.$requestTreated['maintenance'].'/'.$question->id, 'public');
+                    $attachment = new AttachmentModel();
+                    $attachment->id = Ulid::generate();
+                    $attachment->name = $file->getClientOriginalName();
+                    $attachment->category = 'video';
+                    $attachment->path = $path;
+                    $attachment->url = Storage::url($path);
+                    $attachment->type = $file->getClientMimeType();
+                    $attachment->size = $file->getSize();
+                    $attachment->question = $question->id;
+                    $attachment->user = auth()->user()->id;
+                    $attachment->status = true;
+                    $attachment->save();
+                }
+            }
+
+            if (request()->has('photo') && count(request()->file('photo')) > 0){
+                $attachments = request()->file('photo');
+                foreach ($attachments as $file) {
+                    // Fazer o upload do arquivo para o storage
+                    $path = $file->store($requestTreated['business'].'/'.$requestTreated['maintenance'].'/'.$question->id, 'public');
+                    $attachment = new AttachmentModel();
+                    $attachment->id = Ulid::generate();
+                    $attachment->name = $file->getClientOriginalName();
+                    $attachment->category = 'photo';
+                    $attachment->path = $path;
+                    $attachment->url = Storage::url($path);
+                    $attachment->type = $file->getClientMimeType();
+                    $attachment->size = $file->getSize();
+                    $attachment->question = $question->id;
+                    $attachment->user = auth()->user()->id;
+                    $attachment->status = true;
+                    $attachment->save();
+                }
+            }
+
+            //Deletar arquivos em filesDeleted
+            if (request()->has('filesDeleted') && count(request()->filesDeleted) > 0){
+                $attachments = request()->filesDeleted;
+                foreach ($attachments as $file) {
+                    $attachment = AttachmentModel::find($file);
+                    $attachment->delete();
                 }
             }
 

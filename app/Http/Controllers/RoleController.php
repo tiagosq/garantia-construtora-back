@@ -19,9 +19,10 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\UnauthorizedException;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\Uid\Ulid;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RoleController extends Controller {
-    use Log;
+    use Log, SoftDeletes;
 
     /**
     * @OA\Get(

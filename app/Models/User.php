@@ -11,12 +11,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Hash;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 use function PHPUnit\Framework\isEmpty;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, HasUlids, Notifiable;
+    use HasFactory, HasUlids, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'email',
